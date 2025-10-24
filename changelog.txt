@@ -1,3 +1,3 @@
-1.0.0
-- Fixed some ui errors
+1.0.1
+- Fixed some UI errors
 - Added In App Updates
