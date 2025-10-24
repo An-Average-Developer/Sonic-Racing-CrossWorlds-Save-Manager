@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net9.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ApplicationIcon>icon.ico</ApplicationIcon>
+    <UseWPF>true</UseWPF>
+    <AssemblyName>SonicRacingSaveManager</AssemblyName>
+    <RootNamespace>SonicRacingSaveManager</RootNamespace>
+    <Version>1.0.0</Version>
+    <Authors>An Average Developer</Authors>
+    <Product>Sonic Racing CrossWorlds Save Manager</Product>
+    <Description>A simple save file manager for Sonic Racing CrossWorlds</Description>
+
+    <!-- Self-contained and single file for portability -->
+    <SelfContained>true</SelfContained>
+    <PublishSingleFile>true</PublishSingleFile>
+    <PublishReadyToRun>true</PublishReadyToRun>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="MaterialDesignThemes" Version="5.1.0" />
+    <PackageReference Include="MaterialDesignColors" Version="3.1.0" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,558 @@
+<Window x:Class="SonicRacingSaveManager.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        xmlns:local="clr-namespace:SonicRacingSaveManager"
+        Title="Sonic Racing CrossWorlds - Save Manager"
+        Height="700"
+        Width="1000"
+        WindowStartupLocation="CenterScreen"
+        Background="{DynamicResource MaterialDesignPaper}"
+        FontFamily="{DynamicResource MaterialDesignFont}">
+
+    <Window.Resources>
+        <!-- Fade In Animation -->
+        <Storyboard x:Key="FadeInAnimation">
+            <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                           From="0" To="1" Duration="0:0:0.3">
+                <DoubleAnimation.EasingFunction>
+                    <CubicEase EasingMode="EaseOut"/>
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+        </Storyboard>
+
+        <!-- Slide In Animation -->
+        <Storyboard x:Key="SlideInAnimation">
+            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+                           From="20" To="0" Duration="0:0:0.4">
+                <DoubleAnimation.EasingFunction>
+                    <CubicEase EasingMode="EaseOut"/>
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+            <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                           From="0" To="1" Duration="0:0:0.4"/>
+        </Storyboard>
+
+        <!-- Card Style -->
+        <Style x:Key="CardStyle" TargetType="materialDesign:Card">
+            <Setter Property="Margin" Value="10"/>
+            <Setter Property="Padding" Value="20"/>
+            <Style.Triggers>
+                <EventTrigger RoutedEvent="Loaded">
+                    <BeginStoryboard Storyboard="{StaticResource FadeInAnimation}"/>
+                </EventTrigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
+
+    <materialDesign:DialogHost>
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Header -->
+            <materialDesign:ColorZone Grid.Row="0"
+                                     Mode="PrimaryMid"
+                                     Padding="16"
+                                     materialDesign:ElevationAssist.Elevation="Dp4">
+                <DockPanel>
+                    <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
+                        <materialDesign:PackIcon Kind="ContentSave"
+                                               Width="32"
+                                               Height="32"
+                                               VerticalAlignment="Center"
+                                               Margin="0,0,10,0"/>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="Sonic Racing CrossWorlds"
+                                     Style="{StaticResource MaterialDesignHeadline5TextBlock}"/>
+                            <TextBlock Text="Save Manager v1.0"
+                                     Style="{StaticResource MaterialDesignCaptionTextBlock}"
+                                     Opacity="0.8"/>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" HorizontalAlignment="Right">
+                        <Button Style="{StaticResource MaterialDesignRaisedButton}"
+                                ToolTip="Import save files directly (.sav or .zip)"
+                                Command="{Binding ImportFilesDirectlyCommand}"
+                                Height="40"
+                                Margin="0,0,15,0"
+                                Background="#FF6B00">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="FileImport"
+                                                       Width="20"
+                                                       Height="20"
+                                                       VerticalAlignment="Center"
+                                                       Margin="0,0,8,0"/>
+                                <TextBlock Text="Import Save Files"
+                                         VerticalAlignment="Center"
+                                         FontWeight="SemiBold"/>
+                            </StackPanel>
+                        </Button>
+                        <Button Style="{StaticResource MaterialDesignIconButton}"
+                                ToolTip="Open Save Folder"
+                                Command="{Binding OpenSaveFolderCommand}"
+                                Margin="5,0">
+                            <materialDesign:PackIcon Kind="FolderOpen" Width="24" Height="24"/>
+                        </Button>
+                        <Button Style="{StaticResource MaterialDesignIconButton}"
+                                ToolTip="Open Backup Folder"
+                                Command="{Binding OpenBackupFolderCommand}"
+                                Margin="5,0">
+                            <materialDesign:PackIcon Kind="FolderMultiple" Width="24" Height="24"/>
+                        </Button>
+                    </StackPanel>
+                </DockPanel>
+            </materialDesign:ColorZone>
+
+            <!-- Main Content -->
+            <TabControl Grid.Row="1"
+                       Style="{StaticResource MaterialDesignNavigationRailTabControl}"
+                       Margin="10">
+
+                <!-- Create Backup Tab -->
+                <TabItem>
+                    <TabItem.Header>
+                        <StackPanel Width="100">
+                            <materialDesign:PackIcon Kind="BackupRestore"
+                                                   Width="24"
+                                                   Height="24"
+                                                   HorizontalAlignment="Center"/>
+                            <TextBlock Text="Create Backup"
+                                     HorizontalAlignment="Center"
+                                     Margin="0,5,0,0"/>
+                        </StackPanel>
+                    </TabItem.Header>
+
+                    <Grid Margin="20">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <materialDesign:Card Grid.Row="0" Style="{StaticResource CardStyle}">
+                            <StackPanel>
+                                <TextBlock Text="Select Account to Backup"
+                                         Style="{StaticResource MaterialDesignHeadline6TextBlock}"
+                                         Margin="0,0,0,15"/>
+
+                                <TextBlock Text="Choose the Steam account whose saves you want to backup:"
+                                         Style="{StaticResource MaterialDesignBody2TextBlock}"
+                                         Opacity="0.7"
+                                         TextWrapping="Wrap"
+                                         Margin="0,0,0,10"/>
+                            </StackPanel>
+                        </materialDesign:Card>
+
+                        <materialDesign:Card Grid.Row="1" Style="{StaticResource CardStyle}" Margin="10">
+                            <StackPanel>
+                                <TextBlock Text="Select Account:"
+                                         Style="{StaticResource MaterialDesignBody1TextBlock}"
+                                         Margin="0,0,0,10"
+                                         FontWeight="Medium"/>
+
+                                <ComboBox ItemsSource="{Binding Accounts}"
+                                        SelectedItem="{Binding SelectedAccount}"
+                                        materialDesign:HintAssist.Hint="Choose Account"
+                                        Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                                        FontSize="16"
+                                        Margin="0,0,0,20">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid Margin="5">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <materialDesign:PackIcon Grid.Column="0"
+                                                                       Kind="Account"
+                                                                       Width="24"
+                                                                       Height="24"
+                                                                       VerticalAlignment="Center"
+                                                                       Margin="0,0,10,0"
+                                                                       Foreground="{DynamicResource PrimaryHueMidBrush}"/>
+                                                <TextBlock Grid.Column="1"
+                                                         Text="{Binding ShortDisplay}"
+                                                         VerticalAlignment="Center"/>
+                                                <TextBlock Grid.Column="2"
+                                                         VerticalAlignment="Center"
+                                                         Margin="15,0,0,0"
+                                                         Opacity="0.7">
+                                                    <Run Text="{Binding FileCount, Mode=OneWay}"/>
+                                                    <Run Text="files"/>
+                                                </TextBlock>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+
+                                <Button Style="{StaticResource MaterialDesignOutlinedButton}"
+                                      Command="{Binding RefreshAccountsCommand}"
+                                      HorizontalAlignment="Left"
+                                      Margin="0,10,0,0">
+                                    <StackPanel Orientation="Horizontal">
+                                        <materialDesign:PackIcon Kind="Refresh" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                        <TextBlock Text="Refresh Accounts" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
+                        </materialDesign:Card>
+
+                        <materialDesign:Card Grid.Row="2" Style="{StaticResource CardStyle}">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <TextBox Grid.Row="0"
+                                       Text="{Binding BackupName, UpdateSourceTrigger=PropertyChanged}"
+                                       materialDesign:HintAssist.Hint="Backup Name (Optional)"
+                                       Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                       Margin="0,0,0,15"/>
+
+                                <Button Grid.Row="1"
+                                      Command="{Binding CreateBackupCommand}"
+                                      Style="{StaticResource MaterialDesignRaisedButton}"
+                                      Height="50">
+                                    <Button.Content>
+                                        <StackPanel Orientation="Horizontal">
+                                            <materialDesign:PackIcon Kind="ContentSaveAll"
+                                                                   Width="24"
+                                                                   Height="24"
+                                                                   VerticalAlignment="Center"
+                                                                   Margin="0,0,10,0"/>
+                                            <TextBlock Text="Create Backup"
+                                                     VerticalAlignment="Center"
+                                                     FontSize="16"
+                                                     FontWeight="Medium"/>
+                                        </StackPanel>
+                                    </Button.Content>
+                                </Button>
+                            </Grid>
+                        </materialDesign:Card>
+                    </Grid>
+                </TabItem>
+
+                <!-- Restore Backup Tab -->
+                <TabItem>
+                    <TabItem.Header>
+                        <StackPanel Width="100">
+                            <materialDesign:PackIcon Kind="Restore"
+                                                   Width="24"
+                                                   Height="24"
+                                                   HorizontalAlignment="Center"/>
+                            <TextBlock Text="Restore"
+                                     HorizontalAlignment="Center"
+                                     Margin="0,5,0,0"/>
+                        </StackPanel>
+                    </TabItem.Header>
+
+                    <Grid Margin="20">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <materialDesign:Card Grid.Row="0" Style="{StaticResource CardStyle}">
+                            <StackPanel>
+                                <TextBlock Text="Restore Backup"
+                                         Style="{StaticResource MaterialDesignHeadline6TextBlock}"
+                                         Margin="0,0,0,15"/>
+
+                                <TextBlock Text="Select a backup to restore. This will overwrite your current save files."
+                                         Style="{StaticResource MaterialDesignBody2TextBlock}"
+                                         Opacity="0.7"
+                                         TextWrapping="Wrap"
+                                         Foreground="#FF6B00"
+                                         Margin="0,0,0,10"/>
+                            </StackPanel>
+                        </materialDesign:Card>
+
+                        <materialDesign:Card Grid.Row="1" Style="{StaticResource CardStyle}" Margin="10">
+                            <DataGrid ItemsSource="{Binding Backups}"
+                                    SelectedItem="{Binding SelectedBackup}"
+                                    AutoGenerateColumns="False"
+                                    CanUserAddRows="False"
+                                    CanUserDeleteRows="False"
+                                    SelectionMode="Single"
+                                    IsReadOnly="True"
+                                    materialDesign:DataGridAssist.CellPadding="8 4 8 4"
+                                    materialDesign:DataGridAssist.ColumnHeaderPadding="8">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Backup Name"
+                                                      Binding="{Binding DisplayName}"
+                                                      Width="2*"/>
+                                    <DataGridTextColumn Header="Date"
+                                                      Binding="{Binding TimeAgo}"
+                                                      Width="*"/>
+                                    <DataGridTextColumn Header="Account ID"
+                                                      Binding="{Binding AccountId}"
+                                                      Width="*"/>
+                                    <DataGridTextColumn Header="Files"
+                                                      Binding="{Binding FileCount}"
+                                                      Width="Auto"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </materialDesign:Card>
+
+                        <materialDesign:Card Grid.Row="2" Style="{StaticResource CardStyle}">
+                            <StackPanel>
+                                <!-- Account Selector for Restore -->
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,15" HorizontalAlignment="Center">
+                                    <TextBlock Text="Restore to:"
+                                             VerticalAlignment="Center"
+                                             Style="{StaticResource MaterialDesignBody1TextBlock}"
+                                             FontWeight="Medium"
+                                             Margin="0,0,10,0"/>
+                                    <ComboBox ItemsSource="{Binding Accounts}"
+                                            SelectedItem="{Binding SelectedRestoreAccount}"
+                                            Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                                            MinWidth="250">
+                                        <ComboBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <Grid Margin="5">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <materialDesign:PackIcon Grid.Column="0"
+                                                                           Kind="Account"
+                                                                           Width="24"
+                                                                           Height="24"
+                                                                           VerticalAlignment="Center"
+                                                                           Margin="0,0,10,0"
+                                                                           Foreground="{DynamicResource PrimaryHueMidBrush}"/>
+                                                    <TextBlock Grid.Column="1"
+                                                             Text="{Binding ShortDisplay}"
+                                                             VerticalAlignment="Center"/>
+                                                    <TextBlock Grid.Column="2"
+                                                             VerticalAlignment="Center"
+                                                             Margin="15,0,0,0"
+                                                             Opacity="0.7">
+                                                        <Run Text="{Binding FileCount, Mode=OneWay}"/>
+                                                        <Run Text="files"/>
+                                                    </TextBlock>
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ComboBox.ItemTemplate>
+                                    </ComboBox>
+                                </StackPanel>
+
+                                <!-- Buttons -->
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                    <Button Command="{Binding RestoreBackupCommand}"
+                                          Style="{StaticResource MaterialDesignRaisedButton}"
+                                          Height="45"
+                                          Margin="0,0,10,0">
+                                        <StackPanel Orientation="Horizontal">
+                                            <materialDesign:PackIcon Kind="RestoreAlert"
+                                                                   Width="20"
+                                                                   Height="20"
+                                                                   VerticalAlignment="Center"
+                                                                   Margin="0,0,8,0"/>
+                                            <TextBlock Text="Restore (Original)"
+                                                     VerticalAlignment="Center"
+                                                     FontWeight="Medium"/>
+                                        </StackPanel>
+                                    </Button>
+
+                                    <Button Command="{Binding RestoreBackupToCustomCommand}"
+                                          Style="{StaticResource MaterialDesignRaisedButton}"
+                                          Height="45"
+                                          Margin="10,0,0,0"
+                                          Background="#FF6B00">
+                                        <StackPanel Orientation="Horizontal">
+                                            <materialDesign:PackIcon Kind="AccountSwitch"
+                                                                   Width="20"
+                                                                   Height="20"
+                                                                   VerticalAlignment="Center"
+                                                                   Margin="0,0,8,0"/>
+                                            <TextBlock Text="Restore (Selected)"
+                                                     VerticalAlignment="Center"
+                                                     FontWeight="Medium"/>
+                                        </StackPanel>
+                                    </Button>
+
+                                    <Button Command="{Binding RefreshBackupsCommand}"
+                                          Style="{StaticResource MaterialDesignIconButton}"
+                                          ToolTip="Refresh"
+                                          Margin="10,0,0,0">
+                                        <materialDesign:PackIcon Kind="Refresh" Width="24" Height="24"/>
+                                    </Button>
+                                </StackPanel>
+                            </StackPanel>
+                        </materialDesign:Card>
+                    </Grid>
+                </TabItem>
+
+                <!-- Manage Backups Tab -->
+                <TabItem>
+                    <TabItem.Header>
+                        <StackPanel Width="100">
+                            <materialDesign:PackIcon Kind="FolderCog"
+                                                   Width="24"
+                                                   Height="24"
+                                                   HorizontalAlignment="Center"/>
+                            <TextBlock Text="Manage"
+                                     HorizontalAlignment="Center"
+                                     Margin="0,5,0,0"/>
+                        </StackPanel>
+                    </TabItem.Header>
+
+                    <Grid Margin="20">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <materialDesign:Card Grid.Row="0" Style="{StaticResource CardStyle}">
+                            <StackPanel>
+                                <TextBlock Text="Manage Your Backups"
+                                         Style="{StaticResource MaterialDesignHeadline6TextBlock}"
+                                         Margin="0,0,0,15"/>
+
+                                <TextBlock Text="Export backups to share with others, import backups from friends, or delete old backups."
+                                         Style="{StaticResource MaterialDesignBody2TextBlock}"
+                                         Opacity="0.7"
+                                         TextWrapping="Wrap"
+                                         Margin="0,0,0,10"/>
+                            </StackPanel>
+                        </materialDesign:Card>
+
+                        <materialDesign:Card Grid.Row="1" Style="{StaticResource CardStyle}" Margin="10">
+                            <DataGrid ItemsSource="{Binding Backups}"
+                                    SelectedItem="{Binding SelectedManageBackup}"
+                                    AutoGenerateColumns="False"
+                                    CanUserAddRows="False"
+                                    CanUserDeleteRows="False"
+                                    SelectionMode="Single"
+                                    IsReadOnly="True"
+                                    materialDesign:DataGridAssist.CellPadding="8 4 8 4"
+                                    materialDesign:DataGridAssist.ColumnHeaderPadding="8">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Backup Name"
+                                                      Binding="{Binding DisplayName}"
+                                                      Width="2*"/>
+                                    <DataGridTextColumn Header="Date Created"
+                                                      Binding="{Binding DisplayDate}"
+                                                      Width="*"/>
+                                    <DataGridTextColumn Header="Account ID"
+                                                      Binding="{Binding AccountId}"
+                                                      Width="*"/>
+                                    <DataGridTextColumn Header="Files"
+                                                      Binding="{Binding FileCount}"
+                                                      Width="Auto"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </materialDesign:Card>
+
+                        <materialDesign:Card Grid.Row="2" Style="{StaticResource CardStyle}">
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                <Button Command="{Binding ExportBackupCommand}"
+                                      Style="{StaticResource MaterialDesignRaisedButton}"
+                                      Height="45"
+                                      Margin="5"
+                                      Padding="15,0">
+                                    <StackPanel Orientation="Horizontal">
+                                        <materialDesign:PackIcon Kind="Export"
+                                                               Width="20"
+                                                               Height="20"
+                                                               VerticalAlignment="Center"
+                                                               Margin="0,0,8,0"/>
+                                        <TextBlock Text="Export" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+
+                                <Button Command="{Binding ImportBackupCommand}"
+                                      Style="{StaticResource MaterialDesignRaisedButton}"
+                                      Height="45"
+                                      Margin="5"
+                                      Padding="15,0">
+                                    <StackPanel Orientation="Horizontal">
+                                        <materialDesign:PackIcon Kind="Import"
+                                                               Width="20"
+                                                               Height="20"
+                                                               VerticalAlignment="Center"
+                                                               Margin="0,0,8,0"/>
+                                        <TextBlock Text="Import" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+
+                                <Button Command="{Binding DeleteBackupCommand}"
+                                      Style="{StaticResource MaterialDesignOutlinedButton}"
+                                      Height="45"
+                                      Margin="5"
+                                      Padding="15,0"
+                                      Foreground="#D32F2F">
+                                    <StackPanel Orientation="Horizontal">
+                                        <materialDesign:PackIcon Kind="Delete"
+                                                               Width="20"
+                                                               Height="20"
+                                                               VerticalAlignment="Center"
+                                                               Margin="0,0,8,0"/>
+                                        <TextBlock Text="Delete" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+
+                                <Button Command="{Binding OpenBackupFolderCommand}"
+                                      Style="{StaticResource MaterialDesignOutlinedButton}"
+                                      Height="45"
+                                      Margin="5"
+                                      Padding="15,0">
+                                    <StackPanel Orientation="Horizontal">
+                                        <materialDesign:PackIcon Kind="FolderOpen"
+                                                               Width="20"
+                                                               Height="20"
+                                                               VerticalAlignment="Center"
+                                                               Margin="0,0,8,0"/>
+                                        <TextBlock Text="Open Folder" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+
+                                <Button Command="{Binding RefreshBackupsCommand}"
+                                      Style="{StaticResource MaterialDesignIconButton}"
+                                      ToolTip="Refresh"
+                                      Margin="5">
+                                    <materialDesign:PackIcon Kind="Refresh" Width="24" Height="24"/>
+                                </Button>
+                            </StackPanel>
+                        </materialDesign:Card>
+                    </Grid>
+                </TabItem>
+            </TabControl>
+
+            <!-- Status Bar -->
+            <materialDesign:ColorZone Grid.Row="2"
+                                     Mode="PrimaryLight"
+                                     Padding="16,8"
+                                     materialDesign:ElevationAssist.Elevation="Dp2">
+                <Grid>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                        <materialDesign:PackIcon Kind="Information"
+                                               VerticalAlignment="Center"
+                                               Margin="0,0,8,0"/>
+                        <TextBlock Text="{Binding StatusMessage}"
+                                 VerticalAlignment="Center"
+                                 FontWeight="Medium"/>
+                    </StackPanel>
+
+                    <ProgressBar IsIndeterminate="True"
+                               Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}"
+                               Width="200"
+                               HorizontalAlignment="Right"
+                               Height="4"
+                               VerticalAlignment="Center"/>
+                </Grid>
+            </materialDesign:ColorZone>
+        </Grid>
+    </materialDesign:DialogHost>
+</Window>
