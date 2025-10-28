@@ -321,21 +321,17 @@ exit
         {
             try
             {
-                // Try to get the main module file name first (works for regular and single-file apps)
                 var mainModulePath = Process.GetCurrentProcess().MainModule?.FileName;
                 if (!string.IsNullOrEmpty(mainModulePath))
                 {
                     return mainModulePath;
                 }
-
-                // Fallback: Use AppContext.BaseDirectory for single-file apps
                 var baseDir = AppContext.BaseDirectory;
                 var exeName = Path.GetFileNameWithoutExtension(Environment.ProcessPath ?? "SonicRacingSaveManager") + ".exe";
                 return Path.Combine(baseDir, exeName);
             }
             catch
             {
-                // Last resort fallback
                 var baseDir = AppContext.BaseDirectory;
                 return Path.Combine(baseDir, "SonicRacingSaveManager.exe");
             }

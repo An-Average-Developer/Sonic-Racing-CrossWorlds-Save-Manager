@@ -4,7 +4,7 @@
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         xmlns:local="clr-namespace:SonicRacingSaveManager"
         Title="Sonic Racing CrossWorlds - Save Manager"
-        Height="800"
+        Height="1000"
         Width="1000"
         WindowStartupLocation="CenterScreen"
         Background="{DynamicResource MaterialDesignPaper}"
@@ -896,6 +896,310 @@
                                         </Button>
                                     </StackPanel>
                                 </StackPanel>
+                            </materialDesign:Card>
+                        </Grid>
+                    </Grid>
+                </TabItem>
+
+                <!-- Memory Editor Tab -->
+                <TabItem>
+                    <TabItem.Header>
+                        <StackPanel Width="80" Margin="4">
+                            <materialDesign:PackIcon Kind="Memory"
+                                                   Width="20"
+                                                   Height="20"
+                                                   HorizontalAlignment="Center"
+                                                   Margin="0,0,0,8"/>
+                            <TextBlock Text="Cheat&#x0a;Menu"
+                                     HorizontalAlignment="Center"
+                                     TextAlignment="Center"
+                                     FontSize="10"
+                                     LineHeight="12"/>
+                        </StackPanel>
+                    </TabItem.Header>
+
+                    <Grid Margin="20">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Header -->
+                        <materialDesign:Card Grid.Row="0" Style="{StaticResource CardStyle}">
+                            <StackPanel>
+                                <TextBlock Text="Ticket Editor"
+                                         Style="{StaticResource MaterialDesignHeadline6TextBlock}"
+                                         Margin="0,0,0,15"/>
+
+                                <TextBlock Text="Edit game values in real-time. Make sure the game is running before attaching."
+                                         Style="{StaticResource MaterialDesignBody2TextBlock}"
+                                         Opacity="0.7"
+                                         TextWrapping="Wrap"
+                                         Margin="0,0,0,15"/>
+
+                                <!-- Attach Button and Status -->
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <Button Grid.Column="0"
+                                          Command="{Binding MemoryEditor.AttachToProcessCommand}"
+                                          Style="{StaticResource MaterialDesignRaisedButton}"
+                                          Height="45"
+                                          Margin="0,0,15,0"
+                                          Background="#4CAF50">
+                                        <StackPanel Orientation="Horizontal">
+                                            <materialDesign:PackIcon Kind="Link"
+                                                                   Width="20"
+                                                                   Height="20"
+                                                                   VerticalAlignment="Center"
+                                                                   Margin="0,0,8,0"/>
+                                            <TextBlock Text="Attach to Game"
+                                                     VerticalAlignment="Center"
+                                                     FontWeight="Medium"/>
+                                        </StackPanel>
+                                    </Button>
+
+                                    <Button Grid.Column="0"
+                                          Command="{Binding MemoryEditor.DetachFromProcessCommand}"
+                                          Style="{StaticResource MaterialDesignRaisedButton}"
+                                          Height="45"
+                                          Margin="0,0,15,0"
+                                          Background="#D32F2F"
+                                          Visibility="{Binding MemoryEditor.IsAttached, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                        <StackPanel Orientation="Horizontal">
+                                            <materialDesign:PackIcon Kind="LinkOff"
+                                                                   Width="20"
+                                                                   Height="20"
+                                                                   VerticalAlignment="Center"
+                                                                   Margin="0,0,8,0"/>
+                                            <TextBlock Text="Detach"
+                                                     VerticalAlignment="Center"
+                                                     FontWeight="Medium"/>
+                                        </StackPanel>
+                                    </Button>
+
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                        <TextBlock Text="Status:"
+                                                 Style="{StaticResource MaterialDesignCaptionTextBlock}"
+                                                 Opacity="0.7"/>
+                                        <TextBlock Text="{Binding MemoryEditor.StatusMessage}"
+                                                 Style="{StaticResource MaterialDesignBody1TextBlock}"
+                                                 FontWeight="Medium"/>
+                                    </StackPanel>
+                                </Grid>
+                            </StackPanel>
+                        </materialDesign:Card>
+
+                        <!-- Content Area with Left Panel -->
+                        <Grid Grid.Row="1" Margin="0,10,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="2*"/>
+                                <ColumnDefinition Width="3*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Left Panel - Values List -->
+                            <materialDesign:Card Grid.Column="0" Style="{StaticResource CardStyle}" Margin="0,0,10,0">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+                                    <StackPanel Grid.Row="0" Margin="0,0,0,15">
+                                        <TextBlock Text="Game Values"
+                                                 Style="{StaticResource MaterialDesignHeadline6TextBlock}"
+                                                 Margin="0,0,0,10"/>
+
+                                        <CheckBox IsChecked="{Binding MemoryEditor.AutoRefresh}"
+                                                IsEnabled="{Binding MemoryEditor.IsAttached}"
+                                                Content="Auto-refresh (1s)"
+                                                Style="{StaticResource MaterialDesignCheckBox}"/>
+                                    </StackPanel>
+
+                                    <!-- Values List -->
+                                    <ListBox Grid.Row="1"
+                                           ItemsSource="{Binding MemoryEditor.MemoryValues}"
+                                           SelectedItem="{Binding MemoryEditor.SelectedValue}"
+                                           Style="{StaticResource MaterialDesignListBox}">
+                                        <ListBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <Grid Margin="5">
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition Height="Auto"/>
+                                                        <RowDefinition Height="Auto"/>
+                                                    </Grid.RowDefinitions>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+
+                                                    <TextBlock Grid.Row="0" Grid.Column="0"
+                                                             Text="{Binding Name}"
+                                                             FontWeight="Medium"
+                                                             FontSize="14"/>
+
+                                                    <TextBlock Grid.Row="0" Grid.Column="1"
+                                                             Text="{Binding CurrentValue}"
+                                                             FontWeight="Bold"
+                                                             FontSize="16"
+                                                             Foreground="{DynamicResource PrimaryHueMidBrush}"/>
+
+                                                    <TextBlock Grid.Row="1" Grid.Column="0"
+                                                             Grid.ColumnSpan="2"
+                                                             Text="{Binding Description}"
+                                                             Opacity="0.7"
+                                                             FontSize="11"
+                                                             TextWrapping="Wrap"
+                                                             Margin="0,5,0,0"/>
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ListBox.ItemTemplate>
+                                    </ListBox>
+
+                                    <Button Grid.Row="2"
+                                          Command="{Binding MemoryEditor.RefreshValuesCommand}"
+                                          Style="{StaticResource MaterialDesignOutlinedButton}"
+                                          Margin="0,15,0,0"
+                                          Height="40">
+                                        <StackPanel Orientation="Horizontal">
+                                            <materialDesign:PackIcon Kind="Refresh"
+                                                                   VerticalAlignment="Center"
+                                                                   Margin="0,0,8,0"/>
+                                            <TextBlock Text="Refresh Now" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Button>
+                                </Grid>
+                            </materialDesign:Card>
+
+                            <!-- Right Panel - Editor -->
+                            <materialDesign:Card Grid.Column="1" Style="{StaticResource CardStyle}" Margin="10,0,0,0">
+                                <Grid>
+                                    <StackPanel Visibility="{Binding MemoryEditor.SelectedValue, Converter={StaticResource NullToVisibilityConverter}}">
+                                        <TextBlock Text="Edit Value"
+                                                 Style="{StaticResource MaterialDesignHeadline6TextBlock}"
+                                                 Margin="0,0,0,20"/>
+
+                                        <!-- Value Name -->
+                                        <TextBlock Text="Name:"
+                                                 Style="{StaticResource MaterialDesignBody2TextBlock}"
+                                                 Opacity="0.7"
+                                                 Margin="0,0,0,5"/>
+                                        <TextBlock Text="{Binding MemoryEditor.SelectedValue.Name}"
+                                                 Style="{StaticResource MaterialDesignHeadline5TextBlock}"
+                                                 Margin="0,0,0,20"/>
+
+                                        <!-- Description -->
+                                        <TextBlock Text="Description:"
+                                                 Style="{StaticResource MaterialDesignBody2TextBlock}"
+                                                 Opacity="0.7"
+                                                 Margin="0,0,0,5"/>
+                                        <TextBlock Text="{Binding MemoryEditor.SelectedValue.Description}"
+                                                 Style="{StaticResource MaterialDesignBody1TextBlock}"
+                                                 TextWrapping="Wrap"
+                                                 Margin="0,0,0,20"/>
+
+                                        <!-- Current Value -->
+                                        <Border Background="{DynamicResource MaterialDesignDivider}"
+                                              CornerRadius="8"
+                                              Padding="15"
+                                              Margin="0,0,0,20">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+
+                                                <StackPanel Grid.Column="0">
+                                                    <TextBlock Text="Current Value"
+                                                             Style="{StaticResource MaterialDesignCaptionTextBlock}"
+                                                             Opacity="0.7"/>
+                                                    <TextBlock Text="{Binding MemoryEditor.SelectedValue.CurrentValue}"
+                                                             FontSize="32"
+                                                             FontWeight="Bold"
+                                                             Foreground="{DynamicResource PrimaryHueMidBrush}"/>
+                                                </StackPanel>
+
+                                                <materialDesign:PackIcon Grid.Column="1"
+                                                                       Kind="Eye"
+                                                                       Width="48"
+                                                                       Height="48"
+                                                                       Opacity="0.3"
+                                                                       VerticalAlignment="Center"/>
+                                            </Grid>
+                                        </Border>
+
+                                        <!-- New Value Input -->
+                                        <TextBox Text="{Binding MemoryEditor.SelectedValue.NewValue, UpdateSourceTrigger=PropertyChanged}"
+                                               materialDesign:HintAssist.Hint="New Value"
+                                               Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                               FontSize="20"
+                                               Margin="0,0,0,20"/>
+
+                                        <!-- Apply Button -->
+                                        <Button Command="{Binding MemoryEditor.ApplyValueCommand}"
+                                              Style="{StaticResource MaterialDesignRaisedButton}"
+                                              Height="50">
+                                            <StackPanel Orientation="Horizontal">
+                                                <materialDesign:PackIcon Kind="Check"
+                                                                       Width="24"
+                                                                       Height="24"
+                                                                       VerticalAlignment="Center"
+                                                                       Margin="0,0,10,0"/>
+                                                <TextBlock Text="Apply New Value"
+                                                         VerticalAlignment="Center"
+                                                         FontSize="16"
+                                                         FontWeight="Medium"/>
+                                            </StackPanel>
+                                        </Button>
+
+                                        <!-- Warning -->
+                                        <Border Background="#FFF3E0"
+                                              BorderBrush="#FF6B00"
+                                              BorderThickness="2"
+                                              CornerRadius="8"
+                                              Padding="15"
+                                              Margin="0,20,0,0">
+                                            <StackPanel Orientation="Horizontal">
+                                                <materialDesign:PackIcon Kind="Alert"
+                                                                       Width="24"
+                                                                       Height="24"
+                                                                       VerticalAlignment="Center"
+                                                                       Margin="0,0,10,0"
+                                                                       Foreground="#FF6B00"/>
+                                                <TextBlock Text="Changes are applied immediately to the game's memory"
+                                                         TextWrapping="Wrap"
+                                                         VerticalAlignment="Center"
+                                                         Foreground="#FF6B00"
+                                                         FontWeight="Medium"/>
+                                            </StackPanel>
+                                        </Border>
+                                    </StackPanel>
+
+                                    <!-- No Selection Placeholder -->
+                                    <StackPanel Visibility="{Binding MemoryEditor.SelectedValue, Converter={StaticResource InverseNullToVisibilityConverter}}"
+                                              VerticalAlignment="Center"
+                                              HorizontalAlignment="Center">
+                                        <materialDesign:PackIcon Kind="CursorPointer"
+                                                               Width="64"
+                                                               Height="64"
+                                                               HorizontalAlignment="Center"
+                                                               Opacity="0.3"
+                                                               Margin="0,0,0,20"/>
+                                        <TextBlock Text="Select a value from the list"
+                                                 Style="{StaticResource MaterialDesignHeadline6TextBlock}"
+                                                 Opacity="0.5"
+                                                 HorizontalAlignment="Center"/>
+                                        <TextBlock Text="Choose a value to view and edit it"
+                                                 Style="{StaticResource MaterialDesignBody2TextBlock}"
+                                                 Opacity="0.4"
+                                                 HorizontalAlignment="Center"
+                                                 Margin="0,10,0,0"/>
+                                    </StackPanel>
+                                </Grid>
                             </materialDesign:Card>
                         </Grid>
                     </Grid>

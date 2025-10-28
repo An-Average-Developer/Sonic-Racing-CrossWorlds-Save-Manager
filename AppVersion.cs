@@ -1,9 +1,5 @@
 namespace SonicRacingSaveManager
 {
-    /// <summary>
-    /// Application version configuration
-    /// UPDATE THIS VERSION WHEN RELEASING NEW VERSIONS
-    /// </summary>
     public static class AppVersion
     {
         // Current version of the application
@@ -14,7 +10,7 @@ namespace SonicRacingSaveManager
         // GitHub repository information for update checking
         public const string GITHUB_OWNER = "An-Average-Developer";
         public const string GITHUB_REPO = "Sonic-Racing-CrossWorlds-Save-Manager";
-        public const string GITHUB_BRANCH = "main"; // or "master" depending on your default branch
+        public const string GITHUB_BRANCH = "main";
 
         // Enable or disable automatic update checking
         public const bool AUTO_UPDATE_ENABLED = true;

@@ -15,6 +15,7 @@ namespace SonicRacingSaveManager.ViewModels
     {
         private readonly SaveManagerService _saveManager;
         private readonly UpdateService _updateService;
+        private readonly MemoryEditorViewModel _memoryEditor;
 
         private ObservableCollection<SaveAccount> _accounts = new();
         private ObservableCollection<BackupInfo> _backups = new();
@@ -49,6 +50,7 @@ namespace SonicRacingSaveManager.ViewModels
         {
             _saveManager = new SaveManagerService();
             _updateService = new UpdateService();
+            _memoryEditor = new MemoryEditorViewModel();
 
             // Ensure CurrentVersion is properly set - force notification
             _currentVersion = AppVersion.GetDisplayVersion();
@@ -150,6 +152,8 @@ namespace SonicRacingSaveManager.ViewModels
             get => _isLoading;
             set => SetProperty(ref _isLoading, value);
         }
+
+        public MemoryEditorViewModel MemoryEditor => _memoryEditor;
 
         public string SaveDirectory => _saveManager.BaseSaveDirectory;
         public string BackupDirectory => _saveManager.BackupDirectory;
@@ -291,8 +295,7 @@ namespace SonicRacingSaveManager.ViewModels
                 SelectedRestoreAccount = Accounts.First();
             }
 
-            // Automatically check for updates on startup (silently, no error dialogs)
-            // This only checks - it will NOT automatically install updates
+            // Automatically check for updates on startup
             await CheckForUpdatesAsync(silent: true);
         }
 
@@ -893,7 +896,7 @@ namespace SonicRacingSaveManager.ViewModels
                     // Return to main view on failure
                     ShowingInstallationView = false;
                 }
-                // If success, the app will restart automatically via the batch script
+                // If success, the app will restart automatically
             }
             catch (Exception ex)
             {
