@@ -1,2 +1,2 @@
-1.1.0
-- Added a ticket editor system
+1.1.1
+- Fixed some errors in the ticket editor system
