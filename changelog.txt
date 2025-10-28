@@ -1,3 +1,2 @@
-1.0.1
-- Fixed some UI errors
-- Added In App Updates
+1.1.0
+- Added a ticket editor system
