@@ -5,7 +5,7 @@ namespace SonicRacingSaveManager
         // Current version of the application
         // Format: Major.Minor.Patch (e.g., "1.0.0")
         // IMPORTANT: Update this when releasing new versions!
-        public const string CURRENT_VERSION = "1.0.1";
+        public const string CURRENT_VERSION = "1.1.1";
 
         // GitHub repository information for update checking
         public const string GITHUB_OWNER = "An-Average-Developer";

@@ -7,6 +7,7 @@ using System.Windows.Input;
 using System.Windows.Threading;
 using SonicRacingSaveManager.Models;
 using SonicRacingSaveManager.Services;
+using SonicRacingSaveManager.Views;
 
 namespace SonicRacingSaveManager.ViewModels
 {
@@ -14,10 +15,12 @@ namespace SonicRacingSaveManager.ViewModels
     {
         private readonly MemoryEditorService _memoryService;
         private readonly DispatcherTimer _updateTimer;
+        private readonly DispatcherTimer _autoAttachTimer;
         private MemoryValue? _selectedValue;
         private bool _isAttached;
-        private string _statusMessage = "Not attached to game process";
+        private string _statusMessage = "Searching for game process...";
         private bool _autoRefresh = true;
+        private int _lastKnownGoodTicketValue = 0;
 
         public MemoryEditorViewModel()
         {
@@ -50,6 +53,17 @@ namespace SonicRacingSaveManager.ViewModels
                 Interval = TimeSpan.FromSeconds(1)
             };
             _updateTimer.Tick += UpdateTimer_Tick;
+
+            // Setup auto-attach timer to search for game process
+            _autoAttachTimer = new DispatcherTimer
+            {
+                Interval = TimeSpan.FromSeconds(2)
+            };
+            _autoAttachTimer.Tick += AutoAttachTimer_Tick;
+            _autoAttachTimer.Start(); // Start searching immediately
+
+            // Try to attach immediately on startup
+            TryAutoAttach();
         }
 
         public ObservableCollection<MemoryValue> MemoryValues { get; }
@@ -128,6 +142,7 @@ namespace SonicRacingSaveManager.ViewModels
                 {
                     IsAttached = true;
                     StatusMessage = "Successfully attached to game process";
+                    _autoAttachTimer.Stop(); // Stop auto-attach timer
 
                     // Refresh values after attaching
                     RefreshValues(null);
@@ -161,7 +176,11 @@ namespace SonicRacingSaveManager.ViewModels
                 _updateTimer.Stop();
                 _memoryService.DetachFromProcess();
                 IsAttached = false;
-                StatusMessage = "Detached from game process";
+                _lastKnownGoodTicketValue = 0; // Reset cached value
+                StatusMessage = "Detached from game process. Searching for game...";
+
+                // Restart auto-attach timer to search for game again
+                _autoAttachTimer.Start();
             }
             catch (Exception ex)
             {
@@ -184,6 +203,26 @@ namespace SonicRacingSaveManager.ViewModels
                 foreach (var memValue in MemoryValues)
                 {
                     int value = _memoryService.ReadValue(memValue.BaseAddress, memValue.Offsets);
+
+                    // Validate the read value for Tickets
+                    if (memValue.Name == "Tickets")
+                    {
+                        // If we read 0 but had a positive value before, this might be an invalid read
+                        // This happens when the tickets menu is active and the pointer chain breaks
+                        if (value == 0 && _lastKnownGoodTicketValue > 0)
+                        {
+                            // Use cached value instead of the invalid 0
+                            value = _lastKnownGoodTicketValue;
+                            StatusMessage = $"Using cached value (tickets menu may be active) - {DateTime.Now:HH:mm:ss}";
+                        }
+                        else if (value > 0)
+                        {
+                            // Update cache when we get a valid non-zero value
+                            _lastKnownGoodTicketValue = value;
+                            StatusMessage = $"Values refreshed at {DateTime.Now:HH:mm:ss}";
+                        }
+                    }
+
                     memValue.CurrentValue = value;
 
                     // Update NewValue if it hasn't been changed by the user
@@ -193,7 +232,11 @@ namespace SonicRacingSaveManager.ViewModels
                     }
                 }
 
-                StatusMessage = $"Values refreshed at {DateTime.Now:HH:mm:ss}";
+                // Only update status if it wasn't already updated in the loop
+                if (!StatusMessage.Contains("cached value"))
+                {
+                    StatusMessage = $"Values refreshed at {DateTime.Now:HH:mm:ss}";
+                }
             }
             catch (Exception ex)
             {
@@ -227,15 +270,11 @@ namespace SonicRacingSaveManager.ViewModels
                     // Show info message about applying changes
                     Application.Current.Dispatcher.Invoke(() =>
                     {
-                        MessageBox.Show(
-                            "Value updated successfully!\n\n" +
-                            "To see the changes in-game:\n" +
-                            "• Go back to the main menu and reopen the page, OR\n" +
-                            "• Spend tickets to refresh the displayed value",
-                            "Value Applied",
-                            MessageBoxButton.OK,
-                            MessageBoxImage.Information
-                        );
+                        var dialog = new ValueAppliedDialog
+                        {
+                            Owner = Application.Current.MainWindow
+                        };
+                        dialog.ShowDialog();
                     });
                 }
                 else
@@ -274,7 +313,61 @@ namespace SonicRacingSaveManager.ViewModels
         {
             if (IsAttached && AutoRefresh)
             {
+                // Check if the process is still running
+                if (!_memoryService.IsProcessRunning())
+                {
+                    // Game closed, detach and restart auto-attach
+                    _updateTimer.Stop();
+                    _memoryService.DetachFromProcess();
+                    IsAttached = false;
+                    _lastKnownGoodTicketValue = 0;
+                    StatusMessage = "Game closed. Waiting for game to start...";
+                    _autoAttachTimer.Start();
+                    return;
+                }
+
                 RefreshValues(null);
+            }
+        }
+
+        private void AutoAttachTimer_Tick(object? sender, EventArgs e)
+        {
+            TryAutoAttach();
+        }
+
+        private void TryAutoAttach()
+        {
+            // Only try to attach if not already attached
+            if (IsAttached)
+                return;
+
+            try
+            {
+                bool success = _memoryService.AttachToProcess();
+
+                if (success)
+                {
+                    IsAttached = true;
+                    StatusMessage = "Successfully attached to game process";
+                    _autoAttachTimer.Stop(); // Stop searching once attached
+
+                    // Refresh values after attaching
+                    RefreshValues(null);
+
+                    // Start auto-refresh if enabled
+                    if (AutoRefresh)
+                    {
+                        _updateTimer.Start();
+                    }
+                }
+                else
+                {
+                    StatusMessage = "Waiting for game to start...";
+                }
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Error while searching for game: {ex.Message}";
             }
         }
 
