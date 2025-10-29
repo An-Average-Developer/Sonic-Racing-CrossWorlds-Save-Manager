@@ -15,7 +15,6 @@ namespace SonicRacingSaveManager
 
         private void CheckForUpdatesBanner_Click(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
-            // Check for updates when clicking the gray banner
             if (ViewModel != null && ViewModel.CheckForUpdatesCommand.CanExecute(null))
             {
                 ViewModel.CheckForUpdatesCommand.Execute(null);
@@ -24,12 +23,19 @@ namespace SonicRacingSaveManager
 
         private void UpdateStatusButton_Click(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
-            // Show the installation view if update is available
             if (ViewModel != null &&
                 ViewModel.IsUpdateAvailable &&
                 ViewModel.ShowInstallationViewCommand.CanExecute(null))
             {
                 ViewModel.ShowInstallationViewCommand.Execute(null);
+            }
+        }
+
+        private void TicketEditorCard_Click(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            if (ViewModel != null && ViewModel.MemoryEditor.SelectTicketEditorCommand.CanExecute(null))
+            {
+                ViewModel.MemoryEditor.SelectTicketEditorCommand.Execute(null);
             }
         }
     }

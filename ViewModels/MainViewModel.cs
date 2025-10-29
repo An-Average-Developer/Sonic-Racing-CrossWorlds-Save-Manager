@@ -6,14 +6,19 @@ using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
 using Microsoft.Win32;
-using SonicRacingSaveManager.Models;
-using SonicRacingSaveManager.Services;
+using SonicRacingSaveManager.Common.Infrastructure;
+using SonicRacingSaveManager.Configuration;
+using SonicRacingSaveManager.Features.Backup.Models;
+using SonicRacingSaveManager.Features.Backup.Services;
+using SonicRacingSaveManager.Features.Updates.Services;
+using SonicRacingSaveManager.Features.Updates.Views;
+using SonicRacingSaveManager.Features.MemoryEditor.ViewModels;
 
 namespace SonicRacingSaveManager.ViewModels
 {
     public class MainViewModel : ViewModelBase
     {
-        private readonly SaveManagerService _saveManager;
+        private readonly BackupService _backupService;
         private readonly UpdateService _updateService;
         private readonly MemoryEditorViewModel _memoryEditor;
 
@@ -27,7 +32,6 @@ namespace SonicRacingSaveManager.ViewModels
         private string _statusMessage = "Ready";
         private bool _isLoading;
 
-        // Update-related fields
         private string _currentVersion = string.Empty;
         private string _latestVersion = string.Empty;
         private string _updateFileName = string.Empty;
@@ -48,15 +52,13 @@ namespace SonicRacingSaveManager.ViewModels
 
         public MainViewModel()
         {
-            _saveManager = new SaveManagerService();
+            _backupService = new BackupService();
             _updateService = new UpdateService();
             _memoryEditor = new MemoryEditorViewModel();
 
-            // Ensure CurrentVersion is properly set - force notification
             _currentVersion = AppVersion.GetDisplayVersion();
             OnPropertyChanged(nameof(CurrentVersion));
 
-            // Commands
             RefreshAccountsCommand = new RelayCommand(async () => await RefreshAccountsAsync());
             RefreshBackupsCommand = new RelayCommand(async () => await RefreshBackupsAsync());
             CreateBackupCommand = new RelayCommand(async () => await CreateBackupAsync(), () => SelectedAccount != null);
@@ -66,10 +68,9 @@ namespace SonicRacingSaveManager.ViewModels
             ExportBackupCommand = new RelayCommand(async () => await ExportBackupAsync(), () => SelectedManageBackup != null);
             ImportBackupCommand = new RelayCommand(async () => await ImportBackupAsync());
             ImportFilesDirectlyCommand = new RelayCommand(async () => await ImportFilesDirectlyAsync());
-            OpenBackupFolderCommand = new RelayCommand(() => _saveManager.OpenBackupFolder());
-            OpenSaveFolderCommand = new RelayCommand(() => _saveManager.OpenSaveFolder());
+            OpenBackupFolderCommand = new RelayCommand(() => _backupService.OpenBackupFolder());
+            OpenSaveFolderCommand = new RelayCommand(() => _backupService.OpenSaveFolder());
 
-            // Update commands
             CheckForUpdatesCommand = new RelayCommand(async () => await CheckForUpdatesAsync());
             DownloadUpdateCommand = new RelayCommand(async () => await DownloadUpdateAsync(), () => IsUpdateAvailable && !IsDownloading);
             OpenGitHubCommand = new RelayCommand(() => _updateService.OpenGitHubPage());
@@ -77,7 +78,6 @@ namespace SonicRacingSaveManager.ViewModels
             CancelInstallationCommand = new RelayCommand(() => CancelInstallation());
             AcceptInstallationCommand = new RelayCommand(async () => await AcceptInstallationAsync(), () => !IsDownloading);
 
-            // Initial load
             _ = InitializeAsync();
         }
 
@@ -155,8 +155,8 @@ namespace SonicRacingSaveManager.ViewModels
 
         public MemoryEditorViewModel MemoryEditor => _memoryEditor;
 
-        public string SaveDirectory => _saveManager.BaseSaveDirectory;
-        public string BackupDirectory => _saveManager.BackupDirectory;
+        public string SaveDirectory => _backupService.BaseSaveDirectory;
+        public string BackupDirectory => _backupService.BackupDirectory;
 
         public ICommand RefreshAccountsCommand { get; }
         public ICommand RefreshBackupsCommand { get; }
@@ -288,14 +288,12 @@ namespace SonicRacingSaveManager.ViewModels
             await RefreshAccountsAsync();
             await RefreshBackupsAsync();
 
-            // Auto-select first account if available
             if (Accounts.Any())
             {
                 SelectedAccount = Accounts.First();
                 SelectedRestoreAccount = Accounts.First();
             }
 
-            // Automatically check for updates on startup
             await CheckForUpdatesAsync(silent: true);
         }
 
@@ -308,7 +306,7 @@ namespace SonicRacingSaveManager.ViewModels
             {
                 await Task.Run(() =>
                 {
-                    var accounts = _saveManager.GetSaveAccounts();
+                    var accounts = _backupService.GetSaveAccounts();
                     Application.Current.Dispatcher.Invoke(() =>
                     {
                         Accounts.Clear();
@@ -344,7 +342,7 @@ namespace SonicRacingSaveManager.ViewModels
             {
                 await Task.Run(() =>
                 {
-                    var backups = _saveManager.ListBackups();
+                    var backups = _backupService.ListBackups();
                     Application.Current.Dispatcher.Invoke(() =>
                     {
                         Backups.Clear();
@@ -383,7 +381,7 @@ namespace SonicRacingSaveManager.ViewModels
                 var customName = string.IsNullOrWhiteSpace(BackupName) ? null : BackupName;
 
                 var (backupPath, fileCount) = await Task.Run(() =>
-                    _saveManager.CreateBackup(SelectedAccount.AccountId, customName));
+                    _backupService.CreateBackup(SelectedAccount.AccountId, customName));
 
                 BackupName = string.Empty;
                 await RefreshBackupsAsync();
@@ -423,7 +421,7 @@ namespace SonicRacingSaveManager.ViewModels
             try
             {
                 var fileCount = await Task.Run(() =>
-                    _saveManager.RestoreBackup(SelectedBackup.Name));
+                    _backupService.RestoreBackup(SelectedBackup.Name));
 
                 StatusMessage = "Backup restored successfully!";
                 MessageBox.Show($"Backup restored successfully!\n\n{fileCount} files restored.",
@@ -460,7 +458,7 @@ namespace SonicRacingSaveManager.ViewModels
             try
             {
                 var fileCount = await Task.Run(() =>
-                    _saveManager.RestoreBackup(SelectedBackup.Name, SelectedRestoreAccount.AccountId));
+                    _backupService.RestoreBackup(SelectedBackup.Name, SelectedRestoreAccount.AccountId));
 
                 StatusMessage = "Backup restored successfully!";
                 MessageBox.Show($"Backup restored successfully!\n\n{fileCount} files restored to {SelectedRestoreAccount.ShortDisplay}.",
@@ -496,7 +494,7 @@ namespace SonicRacingSaveManager.ViewModels
 
             try
             {
-                await Task.Run(() => _saveManager.DeleteBackup(SelectedManageBackup.Name));
+                await Task.Run(() => _backupService.DeleteBackup(SelectedManageBackup.Name));
 
                 await RefreshBackupsAsync();
                 StatusMessage = "Backup deleted successfully!";
@@ -533,7 +531,7 @@ namespace SonicRacingSaveManager.ViewModels
             try
             {
                 var exportPath = await Task.Run(() =>
-                    _saveManager.ExportBackup(SelectedManageBackup.Name, dialog.FileName));
+                    _backupService.ExportBackup(SelectedManageBackup.Name, dialog.FileName));
 
                 StatusMessage = "Backup exported successfully!";
                 MessageBox.Show($"Backup exported successfully!\n\nLocation: {exportPath}",
@@ -568,7 +566,7 @@ namespace SonicRacingSaveManager.ViewModels
             try
             {
                 var backupName = await Task.Run(() =>
-                    _saveManager.ImportBackup(dialog.FileName));
+                    _backupService.ImportBackup(dialog.FileName));
 
                 await RefreshBackupsAsync();
                 StatusMessage = "Backup imported successfully!";
@@ -587,6 +585,7 @@ namespace SonicRacingSaveManager.ViewModels
             }
         }
 
+        // Import save files directly to account folder (bypasses backup system)
         private async Task ImportFilesDirectlyAsync()
         {
             if (SelectedAccount == null)
@@ -620,7 +619,7 @@ namespace SonicRacingSaveManager.ViewModels
             try
             {
                 var fileCount = await Task.Run(() =>
-                    _saveManager.ImportFilesDirectly(dialog.FileName, SelectedAccount.AccountId));
+                    _backupService.ImportFilesDirectly(dialog.FileName, SelectedAccount.AccountId));
 
                 await RefreshAccountsAsync();
                 StatusMessage = "Files imported successfully!";
@@ -655,7 +654,6 @@ namespace SonicRacingSaveManager.ViewModels
 
                 HasCheckedForUpdates = true;
 
-                // Ensure version has "v" prefix (add it only if not already present)
                 var latestVersionFormatted = updateInfo.LatestVersion.StartsWith("v", StringComparison.OrdinalIgnoreCase)
                     ? updateInfo.LatestVersion
                     : $"v{updateInfo.LatestVersion}";
@@ -668,7 +666,6 @@ namespace SonicRacingSaveManager.ViewModels
 
                 UpdateFileName = updateInfo.FileName;
 
-                // Format file size
                 if (updateInfo.FileSize > 0)
                 {
                     var sizeInMB = updateInfo.FileSize / (1024.0 * 1024.0);
@@ -686,10 +683,9 @@ namespace SonicRacingSaveManager.ViewModels
                     _updateStatusTitle = "Update Available!";
                     _updateStatusMessage = $"A new version ({LatestVersion}) is available for download. Click here to update!";
                     _updateStatusIcon = "Cloud";
-                    _updateStatusColor = new SolidColorBrush(Color.FromRgb(76, 175, 80)); // Green
+                    _updateStatusColor = new SolidColorBrush(Color.FromRgb(76, 175, 80));
                     _updateStatusCursor = "Hand";
 
-                    // Force property change notifications
                     OnPropertyChanged(nameof(UpdateStatusTitle));
                     OnPropertyChanged(nameof(UpdateStatusMessage));
                     OnPropertyChanged(nameof(UpdateStatusIcon));
@@ -706,10 +702,9 @@ namespace SonicRacingSaveManager.ViewModels
                     _updateStatusTitle = "You're up to date!";
                     _updateStatusMessage = $"You have the latest version ({CurrentVersion}).";
                     _updateStatusIcon = "CheckCircle";
-                    _updateStatusColor = new SolidColorBrush(Color.FromRgb(33, 150, 243)); // Blue
+                    _updateStatusColor = new SolidColorBrush(Color.FromRgb(33, 150, 243));
                     _updateStatusCursor = "Arrow";
 
-                    // Force property change notifications
                     OnPropertyChanged(nameof(UpdateStatusTitle));
                     OnPropertyChanged(nameof(UpdateStatusMessage));
                     OnPropertyChanged(nameof(UpdateStatusIcon));
@@ -727,10 +722,9 @@ namespace SonicRacingSaveManager.ViewModels
                 _updateStatusTitle = "Update Check Failed";
                 _updateStatusMessage = $"Could not check for updates. Error: {ex.Message}";
                 _updateStatusIcon = "AlertCircle";
-                _updateStatusColor = new SolidColorBrush(Color.FromRgb(255, 152, 0)); // Orange
+                _updateStatusColor = new SolidColorBrush(Color.FromRgb(255, 152, 0));
                 _updateStatusCursor = "Arrow";
 
-                // Force property change notifications
                 OnPropertyChanged(nameof(UpdateStatusTitle));
                 OnPropertyChanged(nameof(UpdateStatusMessage));
                 OnPropertyChanged(nameof(UpdateStatusIcon));
@@ -760,8 +754,7 @@ namespace SonicRacingSaveManager.ViewModels
             if (_currentUpdateInfo == null || !IsUpdateAvailable)
                 return;
 
-            // Show changelog dialog
-            var changelogDialog = new Views.ChangelogDialog(
+            var changelogDialog = new ChangelogDialog(
                 _currentUpdateInfo.Changelog,
                 _currentUpdateInfo.LatestVersion,
                 _currentUpdateInfo.FileSize
@@ -775,7 +768,6 @@ namespace SonicRacingSaveManager.ViewModels
                 return;
             }
 
-            // User accepted, proceed with download
             IsDownloading = true;
             DownloadProgress = 0;
             DownloadProgressText = "Starting download...";
@@ -818,7 +810,6 @@ namespace SonicRacingSaveManager.ViewModels
                         MessageBoxButton.OK,
                         MessageBoxImage.Error);
                 }
-                // If success, the app will restart automatically via the batch script
             }
             catch (Exception ex)
             {
@@ -839,16 +830,12 @@ namespace SonicRacingSaveManager.ViewModels
             if (_currentUpdateInfo == null || !IsUpdateAvailable)
                 return;
 
-            // Load the changelog
             Changelog = _currentUpdateInfo.Changelog;
-
-            // Switch to installation view
             ShowingInstallationView = true;
         }
 
         private void CancelInstallation()
         {
-            // Return to main update view
             ShowingInstallationView = false;
             StatusMessage = "Update cancelled";
         }
@@ -858,7 +845,6 @@ namespace SonicRacingSaveManager.ViewModels
             if (_currentUpdateInfo == null || !IsUpdateAvailable)
                 return;
 
-            // Start the download
             IsDownloading = true;
             DownloadProgress = 0;
             DownloadProgressText = "Starting download...";
@@ -893,10 +879,8 @@ namespace SonicRacingSaveManager.ViewModels
                         MessageBoxButton.OK,
                         MessageBoxImage.Error);
 
-                    // Return to main view on failure
                     ShowingInstallationView = false;
                 }
-                // If success, the app will restart automatically
             }
             catch (Exception ex)
             {
@@ -904,7 +888,6 @@ namespace SonicRacingSaveManager.ViewModels
                 MessageBox.Show($"Error downloading update:\n{ex.Message}", "Error",
                     MessageBoxButton.OK, MessageBoxImage.Error);
 
-                // Return to main view on error
                 ShowingInstallationView = false;
             }
             finally

@@ -919,23 +919,112 @@
                     </TabItem.Header>
 
                     <Grid Margin="20">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="*"/>
-                        </Grid.RowDefinitions>
+                        <!-- Tool Selection Menu -->
+                        <Grid Visibility="{Binding MemoryEditor.SelectedTool, Converter={StaticResource EqualToVisibilityConverter}, ConverterParameter=menu}">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
 
-                        <!-- Header -->
-                        <materialDesign:Card Grid.Row="0" Style="{StaticResource CardStyle}">
-                            <StackPanel>
-                                <TextBlock Text="Ticket Editor"
-                                         Style="{StaticResource MaterialDesignHeadline6TextBlock}"
-                                         Margin="0,0,0,15"/>
+                            <!-- Header -->
+                            <materialDesign:Card Grid.Row="0" Style="{StaticResource CardStyle}">
+                                <StackPanel>
+                                    <TextBlock Text="Cheat Menu"
+                                             Style="{StaticResource MaterialDesignHeadline6TextBlock}"
+                                             Margin="0,0,0,15"/>
 
-                                <TextBlock Text="Edit game values in real-time. Make sure the game is running before attaching."
-                                         Style="{StaticResource MaterialDesignBody2TextBlock}"
-                                         Opacity="0.7"
-                                         TextWrapping="Wrap"
-                                         Margin="0,0,0,15"/>
+                                    <TextBlock Text="Select a tool to use. Make sure the game is running before using these tools."
+                                             Style="{StaticResource MaterialDesignBody2TextBlock}"
+                                             Opacity="0.7"
+                                             TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </materialDesign:Card>
+
+                            <!-- Tool Selection Cards -->
+                            <Grid Grid.Row="1" Margin="0,10,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <!-- Ticket Editor Card -->
+                                <materialDesign:Card Grid.Column="0"
+                                                   Style="{StaticResource CardStyle}"
+                                                   Margin="0,0,10,0"
+                                                   Cursor="Hand"
+                                                   MouseLeftButtonUp="TicketEditorCard_Click">
+                                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <materialDesign:PackIcon Kind="Ticket"
+                                                               Width="80"
+                                                               Height="80"
+                                                               HorizontalAlignment="Center"
+                                                               Margin="0,20,0,20"
+                                                               Foreground="{DynamicResource PrimaryHueMidBrush}"/>
+
+                                        <TextBlock Text="Ticket Editor"
+                                                 Style="{StaticResource MaterialDesignHeadline5TextBlock}"
+                                                 HorizontalAlignment="Center"
+                                                 Margin="0,0,0,10"/>
+
+                                        <TextBlock Text="Edit in-game currency and other values"
+                                                 Style="{StaticResource MaterialDesignBody2TextBlock}"
+                                                 Opacity="0.7"
+                                                 TextWrapping="Wrap"
+                                                 TextAlignment="Center"
+                                                 Margin="20,0,20,20"/>
+
+                                        <Button Command="{Binding MemoryEditor.SelectTicketEditorCommand}"
+                                              Style="{StaticResource MaterialDesignRaisedButton}"
+                                              Height="45"
+                                              Margin="0,10,0,20">
+                                            <StackPanel Orientation="Horizontal">
+                                                <materialDesign:PackIcon Kind="ChevronRight"
+                                                                       Width="20"
+                                                                       Height="20"
+                                                                       VerticalAlignment="Center"
+                                                                       Margin="0,0,8,0"/>
+                                                <TextBlock Text="Open Editor"
+                                                         VerticalAlignment="Center"
+                                                         FontWeight="Medium"/>
+                                            </StackPanel>
+                                        </Button>
+                                    </StackPanel>
+                                </materialDesign:Card>
+                            </Grid>
+                        </Grid>
+
+                        <!-- Ticket Editor View -->
+                        <Grid Visibility="{Binding MemoryEditor.SelectedTool, Converter={StaticResource EqualToVisibilityConverter}, ConverterParameter=tickets}">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <!-- Header -->
+                            <materialDesign:Card Grid.Row="0" Style="{StaticResource CardStyle}">
+                                <StackPanel>
+                                    <Button Command="{Binding MemoryEditor.BackToMenuCommand}"
+                                          Style="{StaticResource MaterialDesignOutlinedButton}"
+                                          HorizontalAlignment="Left"
+                                          Margin="0,0,0,15"
+                                          Height="35">
+                                        <StackPanel Orientation="Horizontal">
+                                            <materialDesign:PackIcon Kind="ChevronLeft"
+                                                                   VerticalAlignment="Center"
+                                                                   Margin="0,0,8,0"/>
+                                            <TextBlock Text="Back to Menu" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Button>
+
+                                    <TextBlock Text="Ticket Editor"
+                                             Style="{StaticResource MaterialDesignHeadline6TextBlock}"
+                                             Margin="0,0,0,15"/>
+
+                                    <TextBlock Text="Edit game values in real-time. Make sure the game is running before attaching."
+                                             Style="{StaticResource MaterialDesignBody2TextBlock}"
+                                             Opacity="0.7"
+                                             TextWrapping="Wrap"
+                                             Margin="0,0,0,15"/>
 
                                 <!-- Attach Button and Status -->
                                 <Grid>
@@ -1201,6 +1290,7 @@
                                     </StackPanel>
                                 </Grid>
                             </materialDesign:Card>
+                        </Grid>
                         </Grid>
                     </Grid>
                 </TabItem>
