@@ -8,7 +8,7 @@
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <!-- Material Design -->
-                <materialDesign:BundledTheme BaseTheme="Light" PrimaryColor="DeepPurple" SecondaryColor="Lime" />
+                <materialDesign:BundledTheme BaseTheme="Dark" PrimaryColor="DeepPurple" SecondaryColor="Lime" />
                 <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesign3.Defaults.xaml" />
             </ResourceDictionary.MergedDictionaries>
 
@@ -47,6 +47,11 @@
                         </Trigger.ExitActions>
                     </Trigger>
                 </Style.Triggers>
+            </Style>
+
+            <!-- Custom Outlined Button Style for better dark mode -->
+            <Style TargetType="Button" x:Key="CustomOutlinedButton" BasedOn="{StaticResource MaterialDesignOutlinedButton}">
+                <Setter Property="BorderBrush" Value="{DynamicResource MaterialDesignDivider}"/>
             </Style>
 
             <!-- ListBox Item Animation -->

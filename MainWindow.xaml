@@ -43,6 +43,20 @@
                 </EventTrigger>
             </Style.Triggers>
         </Style>
+        <!-- Ring Gradient for Theme Transition - hides old theme in expanding circle -->
+        <RadialGradientBrush x:Key="RingMaskBrush"
+                            x:Name="RingMask"
+                            GradientOrigin="0.5,0.5"
+                            Center="0.5,0.5"
+                            RadiusX="3.0"
+                            RadiusY="3.0"
+                            MappingMode="RelativeToBoundingBox"
+                            SpreadMethod="Pad">
+            <GradientStop Color="Transparent" Offset="0"/>
+            <GradientStop x:Name="InnerEdge" Color="Transparent" Offset="0"/>
+            <GradientStop x:Name="OuterEdge" Color="Black" Offset="0.05"/>
+            <GradientStop Color="Black" Offset="1"/>
+        </RadialGradientBrush>
     </Window.Resources>
 
     <materialDesign:DialogHost>
@@ -53,66 +67,109 @@
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
+            <!-- Theme Transition Overlay - shows static snapshot of old theme outside ring -->
+            <Grid x:Name="ThemeTransitionOverlay"
+                  Grid.RowSpan="3"
+                  Panel.ZIndex="1000"
+                  IsHitTestVisible="False"
+                  Visibility="Collapsed"
+                  OpacityMask="{StaticResource RingMaskBrush}">
+                <Image x:Name="OldThemeSnapshot"
+                       Stretch="None"
+                       HorizontalAlignment="Left"
+                       VerticalAlignment="Top"/>
+            </Grid>
+
+            <!-- Main Content Container -->
+            <Grid x:Name="MainContent" Grid.RowSpan="3">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
             <!-- Header -->
-            <materialDesign:ColorZone Grid.Row="0"
-                                     Mode="PrimaryMid"
-                                     Padding="16"
-                                     materialDesign:ElevationAssist.Elevation="Dp4">
-                <DockPanel>
-                    <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
-                        <materialDesign:PackIcon Kind="ContentSave"
-                                               Width="32"
-                                               Height="32"
-                                               VerticalAlignment="Center"
-                                               Margin="0,0,10,0"/>
-                        <StackPanel VerticalAlignment="Center">
-                            <TextBlock Text="Sonic Racing CrossWorlds"
-                                     Style="{StaticResource MaterialDesignHeadline5TextBlock}"/>
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="Save Manager"
-                                         Style="{StaticResource MaterialDesignCaptionTextBlock}"
-                                         Opacity="0.8"
-                                         Margin="0,0,5,0"/>
-                                <TextBlock Text="{Binding CurrentVersion}"
-                                         Style="{StaticResource MaterialDesignCaptionTextBlock}"
-                                         Opacity="0.8"/>
+            <Grid Grid.Row="0">
+                <materialDesign:ColorZone Mode="PrimaryMid"
+                                         Padding="16"
+                                         materialDesign:ElevationAssist.Elevation="Dp4">
+                    <DockPanel>
+                        <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
+                            <materialDesign:PackIcon Kind="ContentSave"
+                                                   Width="32"
+                                                   Height="32"
+                                                   VerticalAlignment="Center"
+                                                   Margin="0,0,10,0"/>
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="Sonic Racing CrossWorlds"
+                                         Style="{StaticResource MaterialDesignHeadline5TextBlock}"/>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="Save Manager"
+                                             Style="{StaticResource MaterialDesignCaptionTextBlock}"
+                                             Opacity="0.8"
+                                             Margin="0,0,5,0"/>
+                                    <TextBlock Text="{Binding CurrentVersion}"
+                                             Style="{StaticResource MaterialDesignCaptionTextBlock}"
+                                             Opacity="0.8"/>
+                                </StackPanel>
                             </StackPanel>
                         </StackPanel>
-                    </StackPanel>
+                    </DockPanel>
+                </materialDesign:ColorZone>
 
-                    <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" HorizontalAlignment="Right">
-                        <Button Style="{StaticResource MaterialDesignRaisedButton}"
-                                ToolTip="Import save files directly (.sav or .zip)"
-                                Command="{Binding ImportFilesDirectlyCommand}"
-                                Height="40"
-                                Margin="0,0,15,0"
-                                Background="#FF6B00">
-                            <StackPanel Orientation="Horizontal">
-                                <materialDesign:PackIcon Kind="FileImport"
-                                                       Width="20"
-                                                       Height="20"
-                                                       VerticalAlignment="Center"
-                                                       Margin="0,0,8,0"/>
-                                <TextBlock Text="Import Save Files"
-                                         VerticalAlignment="Center"
-                                         FontWeight="SemiBold"/>
-                            </StackPanel>
-                        </Button>
-                        <Button Style="{StaticResource MaterialDesignIconButton}"
-                                ToolTip="Open Save Folder"
-                                Command="{Binding OpenSaveFolderCommand}"
-                                Margin="5,0">
-                            <materialDesign:PackIcon Kind="FolderOpen" Width="24" Height="24"/>
-                        </Button>
-                        <Button Style="{StaticResource MaterialDesignIconButton}"
-                                ToolTip="Open Backup Folder"
-                                Command="{Binding OpenBackupFolderCommand}"
-                                Margin="5,0">
-                            <materialDesign:PackIcon Kind="FolderMultiple" Width="24" Height="24"/>
-                        </Button>
-                    </StackPanel>
-                </DockPanel>
-            </materialDesign:ColorZone>
+                <!-- Floating Buttons -->
+                <StackPanel Orientation="Horizontal"
+                           HorizontalAlignment="Right"
+                           VerticalAlignment="Center"
+                           Margin="0,0,16,0">
+                    <Button Style="{StaticResource MaterialDesignRaisedButton}"
+                            ToolTip="Import save files directly (.sav or .zip)"
+                            Command="{Binding ImportFilesDirectlyCommand}"
+                            Height="50"
+                            Margin="0,0,10,0"
+                            Background="#FF6B00"
+                            materialDesign:ElevationAssist.Elevation="Dp6">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="FileImport"
+                                                   Width="20"
+                                                   Height="20"
+                                                   VerticalAlignment="Center"
+                                                   Margin="0,0,8,0"/>
+                            <TextBlock Text="Import Save Files"
+                                     VerticalAlignment="Center"
+                                     FontWeight="SemiBold"/>
+                        </StackPanel>
+                    </Button>
+                    <Button x:Name="ThemeToggleButton"
+                            Style="{StaticResource MaterialDesignFloatingActionButton}"
+                            ToolTip="Toggle Theme"
+                            Click="ThemeToggleButton_Click"
+                            Margin="5,0"
+                            Width="50"
+                            Height="50"
+                            Background="{DynamicResource PrimaryHueMidBrush}">
+                        <materialDesign:PackIcon x:Name="ThemeIcon" Kind="WeatherSunny" Width="26" Height="26"/>
+                    </Button>
+                    <Button Style="{StaticResource MaterialDesignFloatingActionButton}"
+                            ToolTip="Open Save Folder"
+                            Command="{Binding OpenSaveFolderCommand}"
+                            Margin="5,0"
+                            Width="50"
+                            Height="50"
+                            Background="{DynamicResource PrimaryHueMidBrush}">
+                        <materialDesign:PackIcon Kind="FolderOpen" Width="26" Height="26"/>
+                    </Button>
+                    <Button Style="{StaticResource MaterialDesignFloatingActionButton}"
+                            ToolTip="Open Backup Folder"
+                            Command="{Binding OpenBackupFolderCommand}"
+                            Margin="5,0,0,0"
+                            Width="50"
+                            Height="50"
+                            Background="{DynamicResource PrimaryHueMidBrush}">
+                        <materialDesign:PackIcon Kind="FolderMultiple" Width="26" Height="26"/>
+                    </Button>
+                </StackPanel>
+            </Grid>
 
             <!-- Main Content -->
             <TabControl Grid.Row="1"
@@ -202,7 +259,7 @@
                                     </ComboBox.ItemTemplate>
                                 </ComboBox>
 
-                                <Button Style="{StaticResource MaterialDesignOutlinedButton}"
+                                <Button Style="{StaticResource CustomOutlinedButton}"
                                       Command="{Binding RefreshAccountsCommand}"
                                       HorizontalAlignment="Left"
                                       Margin="0,10,0,0">
@@ -505,11 +562,12 @@
                                 </Button>
 
                                 <Button Command="{Binding DeleteBackupCommand}"
-                                      Style="{StaticResource MaterialDesignOutlinedButton}"
+                                      Style="{StaticResource MaterialDesignRaisedButton}"
                                       Height="45"
                                       Margin="5"
                                       Padding="15,0"
-                                      Foreground="#D32F2F">
+                                      Background="#D32F2F"
+                                      BorderBrush="Transparent">
                                     <StackPanel Orientation="Horizontal">
                                         <materialDesign:PackIcon Kind="Delete"
                                                                Width="20"
@@ -521,7 +579,7 @@
                                 </Button>
 
                                 <Button Command="{Binding OpenBackupFolderCommand}"
-                                      Style="{StaticResource MaterialDesignOutlinedButton}"
+                                      Style="{StaticResource CustomOutlinedButton}"
                                       Height="45"
                                       Margin="5"
                                       Padding="15,0">
@@ -875,7 +933,7 @@
                                               Visibility="{Binding IsDownloading, Converter={StaticResource InverseBooleanToVisibilityConverter}}">
                                         <Button Content="Cancel"
                                               Command="{Binding CancelInstallationCommand}"
-                                              Style="{StaticResource MaterialDesignOutlinedButton}"
+                                              Style="{StaticResource CustomOutlinedButton}"
                                               Height="40"
                                               Margin="0,0,10,0"
                                               Padding="25,0"/>
@@ -927,7 +985,7 @@
                             </Grid.RowDefinitions>
 
                             <!-- Header -->
-                            <materialDesign:Card Grid.Row="0" Style="{StaticResource CardStyle}">
+                            <materialDesign:Card Grid.Row="0" Style="{StaticResource CardStyle}" Margin="0,10,0,0">
                                 <StackPanel>
                                     <TextBlock Text="Cheat Menu"
                                              Style="{StaticResource MaterialDesignHeadline6TextBlock}"
@@ -1001,10 +1059,10 @@
                             </Grid.RowDefinitions>
 
                             <!-- Header -->
-                            <materialDesign:Card Grid.Row="0" Style="{StaticResource CardStyle}">
+                            <materialDesign:Card Grid.Row="0" Style="{StaticResource CardStyle}" Margin="0,10,0,0">
                                 <StackPanel>
                                     <Button Command="{Binding MemoryEditor.BackToMenuCommand}"
-                                          Style="{StaticResource MaterialDesignOutlinedButton}"
+                                          Style="{StaticResource CustomOutlinedButton}"
                                           HorizontalAlignment="Left"
                                           Margin="0,0,0,15"
                                           Height="35">
@@ -1151,7 +1209,7 @@
 
                                     <Button Grid.Row="2"
                                           Command="{Binding MemoryEditor.RefreshValuesCommand}"
-                                          Style="{StaticResource MaterialDesignOutlinedButton}"
+                                          Style="{StaticResource CustomOutlinedButton}"
                                           Margin="0,15,0,0"
                                           Height="40">
                                         <StackPanel Orientation="Horizontal">
@@ -1319,6 +1377,7 @@
                                VerticalAlignment="Center"/>
                 </Grid>
             </materialDesign:ColorZone>
+            </Grid>
         </Grid>
     </materialDesign:DialogHost>
 </Window>
