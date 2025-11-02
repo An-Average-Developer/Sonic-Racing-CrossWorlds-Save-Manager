@@ -9,12 +9,14 @@ using System.Windows.Threading;
 using SonicRacingSaveManager.Common.Infrastructure;
 using SonicRacingSaveManager.Features.ModManager.Models;
 using SonicRacingSaveManager.Features.ModManager.Services;
+using SonicRacingSaveManager.Configuration;
+using Microsoft.Win32;
 
 namespace SonicRacingSaveManager.Features.ModManager.ViewModels
 {
     public class ModManagerViewModel : ViewModelBase
     {
-        private readonly ModManagerService _modManagerService;
+        private ModManagerService? _modManagerService;
         private ObservableCollection<ModInfo> _mods = new();
         private ModInfo? _selectedMod;
         private string _statusMessage = "Ready";
@@ -26,22 +28,21 @@ namespace SonicRacingSaveManager.Features.ModManager.ViewModels
         private const string GAME_PROCESS_NAME = "ASRT-Win64-Shipping";
         private int _updateCheckCounter = 0;
         private const int UPDATE_CHECK_INTERVAL = 60;
+        private bool _isInitialized = false;
 
         public ModManagerViewModel()
         {
-            _modManagerService = new ModManagerService();
-
             RefreshModsCommand = new RelayCommand(async () => await RefreshModsAsync());
             ToggleModCommand = new RelayCommand(async () => await ToggleSelectedModAsync(), () => SelectedMod != null && !IsGameRunning);
             EnableAllModsCommand = new RelayCommand(async () => await EnableAllModsAsync(), () => Mods.Any(m => !m.IsEnabled) && !IsGameRunning);
             DisableAllModsCommand = new RelayCommand(async () => await DisableAllModsAsync(), () => Mods.Any(m => m.IsEnabled) && !IsGameRunning);
             OpenModsFolderCommand = new RelayCommand(() => OpenModsFolder());
+            SelectModsFolderCommand = new RelayCommand(async () => await SelectModsFolderAsync());
             CheckForUpdatesCommand = new RelayCommand(async () => await CheckForUpdatesAsync());
             ShowUpdateDialogCommand = new RelayCommand<ModInfo>(async (mod) => await ShowUpdateDialogAsync(mod), (mod) => !IsGameRunning);
             TogglePriorityModeCommand = new RelayCommand(() => TogglePriorityMode(), () => !IsGameRunning);
             MoveModUpCommand = new RelayCommand(() => MoveModUp(), () => SelectedMod != null && IsPriorityMode && !IsGameRunning);
             MoveModDownCommand = new RelayCommand(() => MoveModDown(), () => SelectedMod != null && IsPriorityMode && !IsGameRunning);
-
 
             _updateCheckTimer = new DispatcherTimer
             {
@@ -49,8 +50,6 @@ namespace SonicRacingSaveManager.Features.ModManager.ViewModels
             };
             _updateCheckTimer.Tick += UpdateCheckTimer_Tick;
             _updateCheckTimer.Start();
-
-            _ = InitializeAsync();
         }
 
         public ObservableCollection<ModInfo> Mods
@@ -91,9 +90,9 @@ namespace SonicRacingSaveManager.Features.ModManager.ViewModels
             }
         }
 
-        public bool ModsDirectoryExists => _modManagerService.ModsDirectoryExists();
+        public bool ModsDirectoryExists => _modManagerService?.ModsDirectoryExists() ?? false;
 
-        public string ModsDirectory => _modManagerService.ModsDirectory;
+        public string ModsDirectory => _modManagerService?.ModsDirectory ?? string.Empty;
 
         public int EnabledModCount => Mods.Count(m => m.IsEnabled);
 
@@ -136,25 +135,37 @@ namespace SonicRacingSaveManager.Features.ModManager.ViewModels
         public ICommand EnableAllModsCommand { get; }
         public ICommand DisableAllModsCommand { get; }
         public ICommand OpenModsFolderCommand { get; }
+        public ICommand SelectModsFolderCommand { get; }
         public ICommand CheckForUpdatesCommand { get; }
         public ICommand ShowUpdateDialogCommand { get; }
         public ICommand TogglePriorityModeCommand { get; }
         public ICommand MoveModUpCommand { get; }
         public ICommand MoveModDownCommand { get; }
 
-        private async Task InitializeAsync()
+        public async Task EnsureInitializedAsync()
         {
-            await RefreshModsAsync();
+            if (_isInitialized)
+                return;
 
+            _isInitialized = true;
+
+            var modsDirectory = SettingsService.GetModsDirectory();
+
+            if (string.IsNullOrEmpty(modsDirectory))
+            {
+                modsDirectory = string.Empty;
+            }
+
+            _modManagerService = new ModManagerService(modsDirectory);
+
+            await RefreshModsAsync();
 
             _ = CheckForUpdatesAsync();
         }
 
         private void UpdateCheckTimer_Tick(object? sender, EventArgs e)
         {
-
             CheckGameRunning();
-
 
             _updateCheckCounter++;
             if (_updateCheckCounter >= UPDATE_CHECK_INTERVAL)
@@ -171,7 +182,6 @@ namespace SonicRacingSaveManager.Features.ModManager.ViewModels
                 var processes = Process.GetProcessesByName(GAME_PROCESS_NAME);
                 bool wasRunning = IsGameRunning;
                 IsGameRunning = processes.Length > 0;
-
 
                 if (IsGameRunning && !wasRunning)
                 {
@@ -204,6 +214,12 @@ namespace SonicRacingSaveManager.Features.ModManager.ViewModels
 
         private async Task RefreshModsAsync()
         {
+            if (_modManagerService == null)
+            {
+                StatusMessage = "Mod manager not initialized";
+                return;
+            }
+
             IsLoading = true;
             StatusMessage = "Scanning for mods...";
 
@@ -221,7 +237,6 @@ namespace SonicRacingSaveManager.Features.ModManager.ViewModels
                         }
                     });
                 });
-
 
                 IsPriorityMode = _modManagerService.IsPriorityModeEnabled(Mods.ToList());
 
@@ -247,7 +262,7 @@ namespace SonicRacingSaveManager.Features.ModManager.ViewModels
 
         private async Task ToggleSelectedModAsync()
         {
-            if (SelectedMod == null)
+            if (SelectedMod == null || _modManagerService == null)
                 return;
 
             if (ShowGameRunningWarning())
@@ -281,6 +296,9 @@ namespace SonicRacingSaveManager.Features.ModManager.ViewModels
 
         private async Task EnableAllModsAsync()
         {
+            if (_modManagerService == null)
+                return;
+
             if (ShowGameRunningWarning())
                 return;
 
@@ -327,6 +345,9 @@ namespace SonicRacingSaveManager.Features.ModManager.ViewModels
 
         private async Task DisableAllModsAsync()
         {
+            if (_modManagerService == null)
+                return;
+
             if (ShowGameRunningWarning())
                 return;
 
@@ -373,6 +394,9 @@ namespace SonicRacingSaveManager.Features.ModManager.ViewModels
 
         private void OpenModsFolder()
         {
+            if (_modManagerService == null)
+                return;
+
             try
             {
                 _modManagerService.OpenModsFolder();
@@ -384,10 +408,35 @@ namespace SonicRacingSaveManager.Features.ModManager.ViewModels
             }
         }
 
+        private async Task SelectModsFolderAsync()
+        {
+            try
+            {
+                var selectedFolder = PromptForModsDirectory();
+
+                if (!string.IsNullOrEmpty(selectedFolder))
+                {
+                    SettingsService.SaveModsDirectory(selectedFolder);
+
+                    _modManagerService = new ModManagerService(selectedFolder);
+
+                    await RefreshModsAsync();
+
+                    StatusMessage = "Mods folder updated successfully";
+                    MessageBox.Show($"Mods folder set to:\n{selectedFolder}\n\nMods have been refreshed.",
+                        "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Error: {ex.Message}";
+                MessageBox.Show($"Failed to set mods folder:\n{ex.Message}", "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
         private void FilterMods()
         {
-
-
         }
 
         private void UpdateModCounts()
@@ -401,6 +450,9 @@ namespace SonicRacingSaveManager.Features.ModManager.ViewModels
 
         private async Task CheckForUpdatesAsync()
         {
+            if (_modManagerService == null)
+                return;
+
             IsLoading = true;
             StatusMessage = "Checking for mod updates...";
 
@@ -435,7 +487,7 @@ namespace SonicRacingSaveManager.Features.ModManager.ViewModels
 
         private async Task ShowUpdateDialogAsync(ModInfo? mod)
         {
-            if (mod == null || !mod.HasUpdate)
+            if (mod == null || !mod.HasUpdate || _modManagerService == null)
                 return;
 
             if (ShowGameRunningWarning())
@@ -443,10 +495,8 @@ namespace SonicRacingSaveManager.Features.ModManager.ViewModels
 
             try
             {
-
                 var dialogViewModel = new ModUpdateDialogViewModel(_modManagerService, mod);
                 var dialog = new Views.ModUpdateDialog(dialogViewModel);
-
 
                 var mainWindow = Application.Current.MainWindow;
                 if (mainWindow != null)
@@ -459,7 +509,6 @@ namespace SonicRacingSaveManager.Features.ModManager.ViewModels
                 if (result == true)
                 {
                     StatusMessage = $"Successfully updated {mod.Name} to version {mod.LatestVersion}";
-
 
                     await RefreshModsAsync();
                 }
@@ -474,6 +523,9 @@ namespace SonicRacingSaveManager.Features.ModManager.ViewModels
 
         private void TogglePriorityMode()
         {
+            if (_modManagerService == null)
+                return;
+
             if (ShowGameRunningWarning())
                 return;
 
@@ -481,7 +533,6 @@ namespace SonicRacingSaveManager.Features.ModManager.ViewModels
             {
                 if (IsPriorityMode)
                 {
-
                     var result = MessageBox.Show(
                         "This will remove priority numbers from mod folder names. Continue?",
                         "Disable Priority Mode",
@@ -498,7 +549,6 @@ namespace SonicRacingSaveManager.Features.ModManager.ViewModels
                 }
                 else
                 {
-
                     var result = MessageBox.Show(
                         "This will add priority numbers to mod folder names (e.g., \"01 - ModName\"). Continue?",
                         "Enable Priority Mode",
@@ -523,7 +573,7 @@ namespace SonicRacingSaveManager.Features.ModManager.ViewModels
 
         private void MoveModUp()
         {
-            if (SelectedMod == null || !IsPriorityMode)
+            if (SelectedMod == null || !IsPriorityMode || _modManagerService == null)
                 return;
 
             if (ShowGameRunningWarning())
@@ -534,9 +584,7 @@ namespace SonicRacingSaveManager.Features.ModManager.ViewModels
             {
                 try
                 {
-
                     Mods.Move(index, index - 1);
-
 
                     _modManagerService.ReorderMods(Mods.ToList());
 
@@ -553,7 +601,7 @@ namespace SonicRacingSaveManager.Features.ModManager.ViewModels
 
         private void MoveModDown()
         {
-            if (SelectedMod == null || !IsPriorityMode)
+            if (SelectedMod == null || !IsPriorityMode || _modManagerService == null)
                 return;
 
             if (ShowGameRunningWarning())
@@ -564,9 +612,7 @@ namespace SonicRacingSaveManager.Features.ModManager.ViewModels
             {
                 try
                 {
-
                     Mods.Move(index, index + 1);
-
 
                     _modManagerService.ReorderMods(Mods.ToList());
 
@@ -583,7 +629,7 @@ namespace SonicRacingSaveManager.Features.ModManager.ViewModels
 
         public void HandleDrop(ModInfo droppedMod, ModInfo targetMod)
         {
-            if (!IsPriorityMode || droppedMod == null || targetMod == null)
+            if (!IsPriorityMode || droppedMod == null || targetMod == null || _modManagerService == null)
                 return;
 
             if (ShowGameRunningWarning())
@@ -597,9 +643,7 @@ namespace SonicRacingSaveManager.Features.ModManager.ViewModels
                 if (droppedIndex < 0 || targetIndex < 0 || droppedIndex == targetIndex)
                     return;
 
-
                 Mods.Move(droppedIndex, targetIndex);
-
 
                 _modManagerService.ReorderMods(Mods.ToList());
 
@@ -611,6 +655,31 @@ namespace SonicRacingSaveManager.Features.ModManager.ViewModels
                     MessageBoxButton.OK, MessageBoxImage.Error);
                 _ = RefreshModsAsync();
             }
+        }
+
+        private string? PromptForModsDirectory()
+        {
+            try
+            {
+                var dialog = new OpenFolderDialog
+                {
+                    Title = "Select Mods Folder",
+                    Multiselect = false
+                };
+
+                var result = dialog.ShowDialog();
+                if (result == true)
+                {
+                    return dialog.FolderName;
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error selecting folder:\n{ex.Message}", "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+
+            return null;
         }
     }
 }

@@ -75,7 +75,7 @@ namespace SonicRacingSaveManager.Features.ModManager.Services
             _httpClient.Timeout = TimeSpan.FromSeconds(10);
         }
 
-        public ModManagerService(string modsDirectory = @"F:\SteamLibrary\steamapps\common\SonicRacingCrossWorlds\UNION\Content\Paks\~mods\")
+        public ModManagerService(string modsDirectory)
         {
             _modsDirectory = modsDirectory;
         }
