@@ -31,4 +31,4 @@ Designed for **modders** and players who love experimenting without risking thei
 
 ## 🤖 AI Assistance Notice
 
-**Artificial intelligence** was used during development to help **correct code errors** and improve overall stability
+**Artificial intelligence** was used during development to help **correct code errors**
