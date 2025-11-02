@@ -8,7 +8,7 @@
     <UseWPF>true</UseWPF>
     <AssemblyName>SonicRacingSaveManager</AssemblyName>
     <RootNamespace>SonicRacingSaveManager</RootNamespace>
-    <Version>1.1.2</Version>
+    <Version>1.1.4</Version>
     <Authors>An Average Developer</Authors>
     <Product>Sonic Racing CrossWorlds Save Manager</Product>
     <Description>A simple save file manager for Sonic Racing CrossWorlds</Description>

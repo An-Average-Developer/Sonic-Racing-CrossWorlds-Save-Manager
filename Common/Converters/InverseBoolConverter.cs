@@ -5,7 +5,6 @@ using System.Windows.Data;
 
 namespace SonicRacingSaveManager.Common.Converters
 {
-    // Hides element when true, shows when false
     public class InverseBoolConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)

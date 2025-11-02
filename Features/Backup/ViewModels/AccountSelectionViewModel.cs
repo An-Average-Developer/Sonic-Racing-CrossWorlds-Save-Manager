@@ -66,7 +66,6 @@ namespace SonicRacingSaveManager.Features.Backup.ViewModels
                     }
                     OnPropertyChanged(nameof(HasNoAccounts));
 
-                    // Auto-select first account if only one
                     if (Accounts.Count == 1)
                     {
                         SelectedAccount = Accounts[0];

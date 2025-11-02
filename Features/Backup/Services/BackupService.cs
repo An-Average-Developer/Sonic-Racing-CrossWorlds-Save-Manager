@@ -33,12 +33,10 @@ namespace SonicRacingSaveManager.Features.Backup.Services
             if (!Directory.Exists(_baseSaveDir))
                 return accounts;
 
-            // Each Steam account gets its own folder (named by Steam ID)
             foreach (var dir in Directory.GetDirectories(_baseSaveDir))
             {
                 var dirName = Path.GetFileName(dir);
 
-                // Steam IDs are numeric
                 if (long.TryParse(dirName, out _))
                 {
                     var saveFiles = Directory.GetFiles(dir, "*.sav");
@@ -60,7 +58,6 @@ namespace SonicRacingSaveManager.Features.Backup.Services
             return accounts.OrderByDescending(a => a.LastModified).ToList();
         }
 
-        // Try to grab the Steam username from VDF config files
         private string GetSteamAccountName(string steamId)
         {
             try
@@ -71,7 +68,6 @@ namespace SonicRacingSaveManager.Features.Backup.Services
                     var steamDir = steamPath.GetValue("SteamPath") as string;
                     if (!string.IsNullOrEmpty(steamDir))
                     {
-                        // Check local config first
                         var configPath = Path.Combine(steamDir, "userdata", steamId, "config", "localconfig.vdf");
                         if (File.Exists(configPath))
                         {
@@ -166,7 +162,6 @@ namespace SonicRacingSaveManager.Features.Backup.Services
                 copiedFiles.Add(fileName);
             }
 
-            // Save metadata from this backup
             var metadata = new BackupMetadata
             {
                 AccountId = accountId,

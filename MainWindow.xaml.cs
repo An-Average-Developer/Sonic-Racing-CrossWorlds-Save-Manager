@@ -14,6 +14,7 @@ namespace SonicRacingSaveManager
     public partial class MainWindow : Window
     {
         private MainViewModel? ViewModel => DataContext as MainViewModel;
+        private bool _isThemeAnimating = false;
 
         public MainWindow()
         {
@@ -49,7 +50,11 @@ namespace SonicRacingSaveManager
 
         private void ThemeToggleButton_Click(object sender, RoutedEventArgs e)
         {
-            // Capture a STATIC snapshot of the current theme
+            if (_isThemeAnimating)
+                return;
+
+            _isThemeAnimating = true;
+
             var renderBitmap = new RenderTargetBitmap(
                 (int)MainContent.ActualWidth,
                 (int)MainContent.ActualHeight,
@@ -58,7 +63,6 @@ namespace SonicRacingSaveManager
             renderBitmap.Render(MainContent);
             OldThemeSnapshot.Source = renderBitmap;
 
-            // Get button position for animation origin
             var button = ThemeToggleButton;
             var buttonPosition = button.TransformToAncestor(MainContent).Transform(new Point(0, 0));
             var buttonCenter = new Point(
@@ -66,46 +70,88 @@ namespace SonicRacingSaveManager
                 buttonPosition.Y + button.ActualHeight / 2
             );
 
-            // Calculate distance to farthest corner to ensure full coverage
             var distanceToCorners = new[]
             {
-                Math.Sqrt(Math.Pow(buttonCenter.X, 2) + Math.Pow(buttonCenter.Y, 2)), // Top-left
-                Math.Sqrt(Math.Pow(MainContent.ActualWidth - buttonCenter.X, 2) + Math.Pow(buttonCenter.Y, 2)), // Top-right
-                Math.Sqrt(Math.Pow(buttonCenter.X, 2) + Math.Pow(MainContent.ActualHeight - buttonCenter.Y, 2)), // Bottom-left
-                Math.Sqrt(Math.Pow(MainContent.ActualWidth - buttonCenter.X, 2) + Math.Pow(MainContent.ActualHeight - buttonCenter.Y, 2)) // Bottom-right
+                Math.Sqrt(Math.Pow(buttonCenter.X, 2) + Math.Pow(buttonCenter.Y, 2)),
+                Math.Sqrt(Math.Pow(MainContent.ActualWidth - buttonCenter.X, 2) + Math.Pow(buttonCenter.Y, 2)),
+                Math.Sqrt(Math.Pow(buttonCenter.X, 2) + Math.Pow(MainContent.ActualHeight - buttonCenter.Y, 2)),
+                Math.Sqrt(Math.Pow(MainContent.ActualWidth - buttonCenter.X, 2) + Math.Pow(MainContent.ActualHeight - buttonCenter.Y, 2))
             };
             var maxDistance = distanceToCorners.Max();
             var maxDimension = Math.Max(MainContent.ActualWidth, MainContent.ActualHeight);
 
-            // Get the gradient brush from resources
             var ringMask = (RadialGradientBrush)this.Resources["RingMaskBrush"];
             var innerEdge = ringMask.GradientStops[1];
             var outerEdge = ringMask.GradientStops[2];
 
-            // Position the gradient center at the button (normalized coordinates)
             var normalizedX = buttonCenter.X / MainContent.ActualWidth;
             var normalizedY = buttonCenter.Y / MainContent.ActualHeight;
             ringMask.GradientOrigin = new Point(normalizedX, normalizedY);
             ringMask.Center = new Point(normalizedX, normalizedY);
 
-            // Reset the gradient stops to start
             innerEdge.Offset = 0;
             outerEdge.Offset = 0.02;
 
-            // Toggle theme immediately
             ThemeService.Instance.ToggleTheme();
 
-            // Update icon
-            ThemeIcon.Kind = ThemeService.Instance.IsDarkTheme ? PackIconKind.WeatherSunny : PackIconKind.WeatherNight;
+            var rotationAnimation = new DoubleAnimation
+            {
+                From = 0,
+                To = 360,
+                Duration = TimeSpan.FromMilliseconds(600),
+                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseInOut }
+            };
 
-            // Show the overlay (shows static snapshot of old theme)
+            if (ThemeIcon.RenderTransform == null || !(ThemeIcon.RenderTransform is TransformGroup))
+            {
+                var transformGroup = new TransformGroup();
+                transformGroup.Children.Add(new ScaleTransform(1, 1, ThemeIcon.Width / 2, ThemeIcon.Height / 2));
+                transformGroup.Children.Add(new RotateTransform(0, ThemeIcon.Width / 2, ThemeIcon.Height / 2));
+                ThemeIcon.RenderTransform = transformGroup;
+            }
+
+            var transforms = (TransformGroup)ThemeIcon.RenderTransform;
+            var scaleTransform = transforms.Children[0] as ScaleTransform;
+            var rotateTransform = transforms.Children[1] as RotateTransform;
+
+            var scaleDownAnimation = new DoubleAnimation
+            {
+                From = 1.0,
+                To = 0.0,
+                Duration = TimeSpan.FromMilliseconds(300),
+                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseIn }
+            };
+
+            var scaleUpAnimation = new DoubleAnimation
+            {
+                From = 0.0,
+                To = 1.0,
+                Duration = TimeSpan.FromMilliseconds(300),
+                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+            };
+
+            scaleDownAnimation.Completed += (s, args) =>
+            {
+                ThemeIcon.Kind = ThemeService.Instance.IsDarkTheme ? PackIconKind.WeatherSunny : PackIconKind.WeatherNight;
+
+                if (scaleTransform != null)
+                {
+                    scaleTransform.BeginAnimation(ScaleTransform.ScaleXProperty, scaleUpAnimation);
+                    scaleTransform.BeginAnimation(ScaleTransform.ScaleYProperty, scaleUpAnimation);
+                }
+            };
+
+            if (rotateTransform != null && scaleTransform != null)
+            {
+                rotateTransform.BeginAnimation(RotateTransform.AngleProperty, rotationAnimation);
+                scaleTransform.BeginAnimation(ScaleTransform.ScaleXProperty, scaleDownAnimation);
+                scaleTransform.BeginAnimation(ScaleTransform.ScaleYProperty, scaleDownAnimation);
+            }
+
             ThemeTransitionOverlay.Visibility = Visibility.Visible;
 
-            // Animate to offset 1.0 (gradient stops are clamped 0-1)
-            // The gradient radius is already enlarged to 3.0, so 1.0 offset will cover everything
             var maxOffset = 1.0;
 
-            // Start the ring animation
             var ringAnimation = new DoubleAnimation
             {
                 From = 0,
@@ -120,6 +166,7 @@ namespace SonicRacingSaveManager
                 OldThemeSnapshot.Source = null;
                 innerEdge.Offset = 0;
                 outerEdge.Offset = 0.02;
+                _isThemeAnimating = false;
             };
 
             innerEdge.BeginAnimation(GradientStop.OffsetProperty, ringAnimation);

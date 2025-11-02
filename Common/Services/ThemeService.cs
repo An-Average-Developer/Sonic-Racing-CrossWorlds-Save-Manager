@@ -29,7 +29,7 @@ namespace SonicRacingSaveManager.Common.Services
         private ThemeService()
         {
             _paletteHelper = new PaletteHelper();
-            _isDarkTheme = true; // Start with dark theme
+            _isDarkTheme = true;
         }
 
         public void ToggleTheme()
@@ -44,51 +44,41 @@ namespace SonicRacingSaveManager.Common.Services
 
             if (isDark)
             {
-                // Custom dark theme with rich colors
                 theme.SetBaseTheme(BaseTheme.Dark);
 
-                // Main backgrounds - very dark
-                theme.Background = Color.FromRgb(18, 18, 18);              // Main dark background
-                theme.Foreground = Color.FromRgb(230, 230, 235);           // Light text for better contrast
+                theme.Background = Color.FromRgb(18, 18, 18);
+                theme.Foreground = Color.FromRgb(245, 245, 245);
 
-                // Enhanced primary color for dark mode (brighter and more vibrant purple)
-                theme.SetPrimaryColor(Color.FromRgb(142, 98, 255));        // Bright vivid purple
-                theme.PrimaryLight = Color.FromRgb(179, 157, 255);         // Light variant
-                theme.PrimaryMid = Color.FromRgb(124, 77, 255);            // Mid variant
-                theme.PrimaryDark = Color.FromRgb(98, 60, 234);            // Dark variant
+                theme.SetPrimaryColor(Color.FromRgb(200, 200, 200));
+                theme.PrimaryLight = Color.FromRgb(230, 230, 230);
+                theme.PrimaryMid = Color.FromRgb(180, 180, 180);
+                theme.PrimaryDark = Color.FromRgb(150, 150, 150);
 
-                // Enhanced secondary color - brighter lime for dark mode
-                theme.SetSecondaryColor(Color.FromRgb(205, 220, 57));      // Lime (good contrast on dark)
-                theme.SecondaryLight = Color.FromRgb(220, 231, 117);       // Light lime
-                theme.SecondaryMid = Color.FromRgb(205, 220, 57);          // Mid lime
-                theme.SecondaryDark = Color.FromRgb(175, 180, 43);         // Dark lime
+                theme.SetSecondaryColor(Color.FromRgb(160, 160, 160));
+                theme.SecondaryLight = Color.FromRgb(190, 190, 190);
+                theme.SecondaryMid = Color.FromRgb(140, 140, 140);
+                theme.SecondaryDark = Color.FromRgb(120, 120, 120);
 
-                // Validation/error color
-                theme.ValidationError = Color.FromRgb(244, 67, 54);        // Bright red for visibility
+                theme.ValidationError = Color.FromRgb(180, 180, 180);
             }
             else
             {
-                // Light theme - clean and crisp
                 theme.SetBaseTheme(BaseTheme.Light);
 
-                // Main backgrounds
-                theme.Background = Color.FromRgb(250, 250, 250);           // Light gray background
-                theme.Foreground = Color.FromRgb(33, 33, 33);              // Dark text
+                theme.Background = Color.FromRgb(250, 250, 250);
+                theme.Foreground = Color.FromRgb(33, 33, 33);
 
-                // Primary color - standard deep purple
-                theme.SetPrimaryColor(Color.FromRgb(103, 58, 183));        // Deep Purple
-                theme.PrimaryLight = Color.FromRgb(179, 157, 219);         // Light variant
-                theme.PrimaryMid = Color.FromRgb(103, 58, 183);            // Mid variant
-                theme.PrimaryDark = Color.FromRgb(77, 40, 140);            // Dark variant
+                theme.SetPrimaryColor(Color.FromRgb(103, 58, 183));
+                theme.PrimaryLight = Color.FromRgb(179, 157, 219);
+                theme.PrimaryMid = Color.FromRgb(103, 58, 183);
+                theme.PrimaryDark = Color.FromRgb(77, 40, 140);
 
-                // Secondary color
-                theme.SetSecondaryColor(Color.FromRgb(205, 220, 57));      // Lime
-                theme.SecondaryLight = Color.FromRgb(220, 231, 117);       // Light lime
-                theme.SecondaryMid = Color.FromRgb(205, 220, 57);          // Mid lime
-                theme.SecondaryDark = Color.FromRgb(175, 180, 43);         // Dark lime
+                theme.SetSecondaryColor(Color.FromRgb(205, 220, 57));
+                theme.SecondaryLight = Color.FromRgb(220, 231, 117);
+                theme.SecondaryMid = Color.FromRgb(205, 220, 57);
+                theme.SecondaryDark = Color.FromRgb(175, 180, 43);
 
-                // Validation color
-                theme.ValidationError = Color.FromRgb(211, 47, 47);        // Red
+                theme.ValidationError = Color.FromRgb(211, 47, 47);
             }
 
             _paletteHelper.SetTheme(theme);

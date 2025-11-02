@@ -43,11 +43,9 @@ namespace SonicRacingSaveManager.Features.Updates.Services
 
             try
             {
-                // Grab the latest version info from GitHub
                 var versionUrl = $"https://raw.githubusercontent.com/An-Average-Developer/Sonic-Racing-CrossWorlds-Save-Manager/main/version.txt";
                 var latestVersion = await _httpClient.GetStringAsync(versionUrl);
 
-                // Clean up any weird formatting from the file
                 latestVersion = latestVersion?.Trim() ?? string.Empty;
                 latestVersion = latestVersion.Replace("\r", "").Replace("\n", "").Replace("\t", "").Trim();
 
@@ -187,7 +185,6 @@ namespace SonicRacingSaveManager.Features.Updates.Services
                     return false;
                 }
 
-                // Batch script handles the update after we close the app
                 var batchContent = $@"
 @echo off
 chcp 65001 >nul

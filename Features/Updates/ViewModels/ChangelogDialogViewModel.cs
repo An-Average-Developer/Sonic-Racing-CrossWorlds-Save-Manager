@@ -16,13 +16,11 @@ namespace SonicRacingSaveManager.Features.Updates.ViewModels
         {
             _window = window;
             _changelog = changelog;
-            // Ensure version has "v" prefix
             var versionText = latestVersion.StartsWith("v", System.StringComparison.OrdinalIgnoreCase)
                 ? latestVersion
                 : $"v{latestVersion}";
             _versionInfo = $"Version {versionText}";
 
-            // Format file size
             if (fileSize > 0)
             {
                 var sizeInMB = fileSize / (1024.0 * 1024.0);

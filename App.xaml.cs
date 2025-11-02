@@ -9,9 +9,8 @@ namespace SonicRacingSaveManager
         {
             base.OnStartup(e);
 
-            // Initialize and apply theme
             var themeService = ThemeService.Instance;
-            themeService.IsDarkTheme = true; // This will trigger ApplyTheme
+            themeService.IsDarkTheme = true;
         }
     }
 }

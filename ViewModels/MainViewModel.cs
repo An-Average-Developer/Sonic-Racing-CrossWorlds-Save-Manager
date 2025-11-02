@@ -13,6 +13,7 @@ using SonicRacingSaveManager.Features.Backup.Services;
 using SonicRacingSaveManager.Features.Updates.Services;
 using SonicRacingSaveManager.Features.Updates.Views;
 using SonicRacingSaveManager.Features.MemoryEditor.ViewModels;
+using SonicRacingSaveManager.Features.ModManager.ViewModels;
 
 namespace SonicRacingSaveManager.ViewModels
 {
@@ -21,6 +22,7 @@ namespace SonicRacingSaveManager.ViewModels
         private readonly BackupService _backupService;
         private readonly UpdateService _updateService;
         private readonly MemoryEditorViewModel _memoryEditor;
+        private readonly ModManagerViewModel _modManager;
 
         private ObservableCollection<SaveAccount> _accounts = new();
         private ObservableCollection<BackupInfo> _backups = new();
@@ -55,6 +57,7 @@ namespace SonicRacingSaveManager.ViewModels
             _backupService = new BackupService();
             _updateService = new UpdateService();
             _memoryEditor = new MemoryEditorViewModel();
+            _modManager = new ModManagerViewModel();
 
             _currentVersion = AppVersion.GetDisplayVersion();
             OnPropertyChanged(nameof(CurrentVersion));
@@ -154,6 +157,7 @@ namespace SonicRacingSaveManager.ViewModels
         }
 
         public MemoryEditorViewModel MemoryEditor => _memoryEditor;
+        public ModManagerViewModel ModManager => _modManager;
 
         public string SaveDirectory => _backupService.BaseSaveDirectory;
         public string BackupDirectory => _backupService.BackupDirectory;
@@ -170,7 +174,7 @@ namespace SonicRacingSaveManager.ViewModels
         public ICommand OpenBackupFolderCommand { get; }
         public ICommand OpenSaveFolderCommand { get; }
 
-        // Update commands
+
         public ICommand CheckForUpdatesCommand { get; }
         public ICommand DownloadUpdateCommand { get; }
         public ICommand OpenGitHubCommand { get; }
@@ -178,7 +182,7 @@ namespace SonicRacingSaveManager.ViewModels
         public ICommand CancelInstallationCommand { get; }
         public ICommand AcceptInstallationCommand { get; }
 
-        // Update properties
+
         public string CurrentVersion
         {
             get => _currentVersion;
@@ -585,7 +589,6 @@ namespace SonicRacingSaveManager.ViewModels
             }
         }
 
-        // Import save files directly to account folder (bypasses backup system)
         private async Task ImportFilesDirectlyAsync()
         {
             if (SelectedAccount == null)

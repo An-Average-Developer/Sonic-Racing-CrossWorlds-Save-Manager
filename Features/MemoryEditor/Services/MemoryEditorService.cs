@@ -5,11 +5,8 @@ using System.Runtime.InteropServices;
 
 namespace SonicRacingSaveManager.Features.MemoryEditor.Services
 {
-    // Handles reading/writing to game memory
-    // Works with ints and floats - mainly used for tickets and other game values
     public class MemoryEditorService
     {
-        // Windows API calls for memory stuff
         [DllImport("kernel32.dll")]
         private static extern IntPtr OpenProcess(int dwDesiredAccess, bool bInheritHandle, int dwProcessId);
 
@@ -131,7 +128,6 @@ namespace SonicRacingSaveManager.Features.MemoryEditor.Services
             }
         }
 
-        // Read float from memory (same as ReadValue but for floats instead of ints)
         public float ReadFloatValue(long baseOffset, int[] offsets)
         {
             if (!_isAttached || _processHandle == IntPtr.Zero)
@@ -143,7 +139,7 @@ namespace SonicRacingSaveManager.Features.MemoryEditor.Services
             {
                 IntPtr address = ResolvePointerChain(baseOffset, offsets);
 
-                byte[] buffer = new byte[4]; // floats are 4 bytes
+                byte[] buffer = new byte[4];
                 if (ReadProcessMemory(_processHandle, address, buffer, buffer.Length, out _))
                 {
                     return BitConverter.ToSingle(buffer, 0);
@@ -157,7 +153,6 @@ namespace SonicRacingSaveManager.Features.MemoryEditor.Services
             }
         }
 
-        // Write float to memory (same as WriteValue but for floats)
         public bool WriteFloatValue(long baseOffset, int[] offsets, float value)
         {
             if (!_isAttached || _processHandle == IntPtr.Zero)
@@ -178,7 +173,6 @@ namespace SonicRacingSaveManager.Features.MemoryEditor.Services
             }
         }
 
-        // Walks the pointer chain to find where the value actually lives in memory
         private IntPtr ResolvePointerChain(long baseOffset, int[] offsets)
         {
             if (offsets == null || offsets.Length == 0)

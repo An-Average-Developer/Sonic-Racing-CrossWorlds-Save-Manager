@@ -259,7 +259,7 @@
                                     </ComboBox.ItemTemplate>
                                 </ComboBox>
 
-                                <Button Style="{StaticResource CustomOutlinedButton}"
+                                <Button Style="{StaticResource MaterialDesignOutlinedButton}"
                                       Command="{Binding RefreshAccountsCommand}"
                                       HorizontalAlignment="Left"
                                       Margin="0,10,0,0">
@@ -579,7 +579,7 @@
                                 </Button>
 
                                 <Button Command="{Binding OpenBackupFolderCommand}"
-                                      Style="{StaticResource CustomOutlinedButton}"
+                                      Style="{StaticResource MaterialDesignOutlinedButton}"
                                       Height="45"
                                       Margin="5"
                                       Padding="15,0">
@@ -601,361 +601,6 @@
                                 </Button>
                             </StackPanel>
                         </materialDesign:Card>
-                    </Grid>
-                </TabItem>
-
-                <!-- Update Tab -->
-                <TabItem>
-                    <TabItem.Header>
-                        <StackPanel Width="80" Margin="4">
-                            <materialDesign:PackIcon Kind="CloudDownload"
-                                                   Width="20"
-                                                   Height="20"
-                                                   HorizontalAlignment="Center"
-                                                   Margin="0,0,0,8"/>
-                            <TextBlock Text="Updates"
-                                     HorizontalAlignment="Center"
-                                     TextAlignment="Center"
-                                     FontSize="10"
-                                     LineHeight="12"/>
-                        </StackPanel>
-                    </TabItem.Header>
-
-                    <Grid Margin="20">
-                        <!-- Main Update View -->
-                        <Grid Visibility="{Binding ShowingInstallationView, Converter={StaticResource InverseBooleanToVisibilityConverter}}">
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="*"/>
-                            </Grid.RowDefinitions>
-
-                            <materialDesign:Card Grid.Row="0" Style="{StaticResource CardStyle}">
-                                <StackPanel>
-                                    <TextBlock Text="App Updates"
-                                             Style="{StaticResource MaterialDesignHeadline6TextBlock}"
-                                             Margin="0,0,0,15"/>
-
-                                    <TextBlock Text="Check for updates and download the latest version from GitHub."
-                                             Style="{StaticResource MaterialDesignBody2TextBlock}"
-                                             Opacity="0.7"
-                                             TextWrapping="Wrap"
-                                             Margin="0,0,0,10"/>
-                                </StackPanel>
-                            </materialDesign:Card>
-
-                            <materialDesign:Card Grid.Row="1" Style="{StaticResource CardStyle}" Margin="10">
-                            <StackPanel>
-                                <!-- Current Version Info - Click to check for updates -->
-                                <Border Background="{DynamicResource MaterialDesignDivider}"
-                                       CornerRadius="8"
-                                       Margin="0,0,0,20"
-                                       Cursor="Hand"
-                                       MouseLeftButtonUp="CheckForUpdatesBanner_Click">
-                                    <Grid Margin="15">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="Auto"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
-
-                                        <materialDesign:PackIcon Grid.Column="0"
-                                                               Kind="Information"
-                                                               Width="32"
-                                                               Height="32"
-                                                               VerticalAlignment="Center"
-                                                               Margin="0,0,15,0"
-                                                               Foreground="{DynamicResource PrimaryHueMidBrush}"/>
-
-                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                            <TextBlock Text="Current Version"
-                                                     FontSize="12"
-                                                     Opacity="0.7"/>
-                                            <TextBlock FontSize="24"
-                                                     FontWeight="Bold"
-                                                     Margin="0,5,0,0">
-                                                <Run Text="{Binding CurrentVersion, Mode=OneWay}"/>
-                                            </TextBlock>
-                                            <TextBlock Text="Click here to check for updates"
-                                                     FontSize="11"
-                                                     Opacity="0.6"
-                                                     Margin="0,5,0,0"
-                                                     FontStyle="Italic"/>
-                                        </StackPanel>
-                                    </Grid>
-                                </Border>
-
-                                <!-- Update Status - Only clickable when update available -->
-                                <Border x:Name="UpdateStatusBorder"
-                                       Background="{Binding UpdateStatusColor}"
-                                       CornerRadius="8"
-                                       Margin="0,0,0,20"
-                                       Visibility="{Binding HasCheckedForUpdates, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                       Cursor="{Binding UpdateStatusCursor}"
-                                       MouseLeftButtonUp="UpdateStatusButton_Click">
-                                    <Border.Style>
-                                        <Style TargetType="Border">
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding IsUpdateAvailable}" Value="False">
-                                                    <Setter Property="IsEnabled" Value="False"/>
-                                                    <Setter Property="Cursor" Value="Arrow"/>
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </Border.Style>
-                                    <Grid Margin="15">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="Auto"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
-
-                                        <materialDesign:PackIcon Grid.Column="0"
-                                                               Kind="{Binding UpdateStatusIcon}"
-                                                               Width="32"
-                                                               Height="32"
-                                                               VerticalAlignment="Center"
-                                                               Margin="0,0,15,0"
-                                                               Foreground="White"/>
-
-                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                            <TextBlock FontSize="20"
-                                                     Foreground="White"
-                                                     FontWeight="Bold">
-                                                <Run Text="{Binding UpdateStatusTitle, Mode=OneWay}"/>
-                                            </TextBlock>
-                                            <TextBlock FontSize="14"
-                                                     Foreground="White"
-                                                     Opacity="0.9"
-                                                     TextWrapping="Wrap"
-                                                     Margin="0,5,0,0">
-                                                <Run Text="{Binding UpdateStatusMessage, Mode=OneWay}"/>
-                                            </TextBlock>
-                                        </StackPanel>
-                                    </Grid>
-                                </Border>
-
-                                <!-- Update Details (if available) -->
-                                <StackPanel Visibility="{Binding IsUpdateAvailable, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                          Margin="0,0,0,20">
-                                    <TextBlock Text="New Version Details"
-                                             Style="{StaticResource MaterialDesignBody1TextBlock}"
-                                             FontWeight="Medium"
-                                             Margin="0,0,0,10"/>
-
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="Auto"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
-                                        <Grid.RowDefinitions>
-                                            <RowDefinition Height="Auto"/>
-                                            <RowDefinition Height="Auto"/>
-                                            <RowDefinition Height="Auto"/>
-                                        </Grid.RowDefinitions>
-
-                                        <TextBlock Grid.Row="0" Grid.Column="0"
-                                                 Text="Latest Version:"
-                                                 Margin="0,5"
-                                                 Opacity="0.7"/>
-                                        <TextBlock Grid.Row="0" Grid.Column="1"
-                                                 Text="{Binding LatestVersion, FallbackValue=N/A}"
-                                                 Margin="10,5"
-                                                 FontWeight="Medium"/>
-
-                                        <TextBlock Grid.Row="1" Grid.Column="0"
-                                                 Text="File Name:"
-                                                 Margin="0,5"
-                                                 Opacity="0.7"/>
-                                        <TextBlock Grid.Row="1" Grid.Column="1"
-                                                 Text="{Binding UpdateFileName}"
-                                                 Margin="10,5"
-                                                 FontWeight="Medium"/>
-
-                                        <TextBlock Grid.Row="2" Grid.Column="0"
-                                                 Text="File Size:"
-                                                 Margin="0,5"
-                                                 Opacity="0.7"/>
-                                        <TextBlock Grid.Row="2" Grid.Column="1"
-                                                 Text="{Binding UpdateFileSize}"
-                                                 Margin="10,5"
-                                                 FontWeight="Medium"/>
-                                    </Grid>
-                                </StackPanel>
-
-                                <!-- Download Progress -->
-                                <StackPanel Visibility="{Binding IsDownloading, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                          Margin="0,0,0,20">
-                                    <TextBlock Text="Downloading Update..."
-                                             Style="{StaticResource MaterialDesignBody1TextBlock}"
-                                             FontWeight="Medium"
-                                             Margin="0,0,0,10"/>
-                                    <ProgressBar Value="{Binding DownloadProgress}"
-                                               Height="8"
-                                               Maximum="100"/>
-                                    <TextBlock Text="{Binding DownloadProgressText}"
-                                             Style="{StaticResource MaterialDesignCaptionTextBlock}"
-                                             Opacity="0.7"
-                                             Margin="0,5,0,0"
-                                             HorizontalAlignment="Center"/>
-                                </StackPanel>
-
-                                <!-- Hint Text -->
-                                <TextBlock Text="Click the banner above to start the update"
-                                         Style="{StaticResource MaterialDesignCaptionTextBlock}"
-                                         Opacity="0.7"
-                                         HorizontalAlignment="Center"
-                                         Margin="0,10,0,0"
-                                         Visibility="{Binding IsUpdateAvailable, Converter={StaticResource BooleanToVisibilityConverter}}"/>
-                            </StackPanel>
-                        </materialDesign:Card>
-                        </Grid>
-
-                        <!-- Installation View -->
-                        <Grid Visibility="{Binding ShowingInstallationView, Converter={StaticResource BooleanToVisibilityConverter}}">
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="*"/>
-                                <RowDefinition Height="Auto"/>
-                            </Grid.RowDefinitions>
-
-                            <!-- Header -->
-                            <materialDesign:Card Grid.Row="0" Style="{StaticResource CardStyle}">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-
-                                    <materialDesign:PackIcon Grid.Column="0"
-                                                           Kind="Cloud"
-                                                           Width="48"
-                                                           Height="48"
-                                                           VerticalAlignment="Center"
-                                                           Margin="0,0,20,0"
-                                                           Foreground="{DynamicResource PrimaryHueMidBrush}"/>
-
-                                    <StackPanel Grid.Column="1">
-                                        <TextBlock Text="Update Available!"
-                                                 Style="{StaticResource MaterialDesignHeadline5TextBlock}"
-                                                 Margin="0,0,0,10"/>
-                                        <TextBlock FontSize="16"
-                                                 Opacity="0.8">
-                                            <Run Text="Version"/>
-                                            <Run Text="{Binding LatestVersion, Mode=OneWay}" FontWeight="Bold"/>
-                                            <Run Text="is ready to install"/>
-                                        </TextBlock>
-                                        <Grid Margin="0,10,0,0">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="Auto"/>
-                                                <ColumnDefinition Width="*"/>
-                                            </Grid.ColumnDefinitions>
-                                            <Grid.RowDefinitions>
-                                                <RowDefinition Height="Auto"/>
-                                                <RowDefinition Height="Auto"/>
-                                            </Grid.RowDefinitions>
-
-                                            <TextBlock Grid.Row="0" Grid.Column="0"
-                                                     Text="File Name:"
-                                                     Margin="0,5,10,5"
-                                                     Opacity="0.7"/>
-                                            <TextBlock Grid.Row="0" Grid.Column="1"
-                                                     Margin="0,5"
-                                                     FontWeight="Medium">
-                                                <Run Text="{Binding UpdateFileName, Mode=OneWay}"/>
-                                            </TextBlock>
-
-                                            <TextBlock Grid.Row="1" Grid.Column="0"
-                                                     Text="File Size:"
-                                                     Margin="0,5,10,5"
-                                                     Opacity="0.7"/>
-                                            <TextBlock Grid.Row="1" Grid.Column="1"
-                                                     Margin="0,5"
-                                                     FontWeight="Medium">
-                                                <Run Text="{Binding UpdateFileSize, Mode=OneWay}"/>
-                                            </TextBlock>
-                                        </Grid>
-                                    </StackPanel>
-                                </Grid>
-                            </materialDesign:Card>
-
-                            <!-- Changelog -->
-                            <materialDesign:Card Grid.Row="1" Style="{StaticResource CardStyle}" Margin="10">
-                                <Grid>
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="Auto"/>
-                                        <RowDefinition Height="*"/>
-                                    </Grid.RowDefinitions>
-
-                                    <TextBlock Grid.Row="0"
-                                             Text="What's New:"
-                                             Style="{StaticResource MaterialDesignHeadline6TextBlock}"
-                                             Margin="0,0,0,15"/>
-
-                                    <Border Grid.Row="1"
-                                          Background="{DynamicResource MaterialDesignDivider}"
-                                          CornerRadius="8"
-                                          Padding="15">
-                                        <ScrollViewer VerticalScrollBarVisibility="Auto">
-                                            <TextBlock TextWrapping="Wrap"
-                                                     FontFamily="Consolas"
-                                                     FontSize="13"
-                                                     LineHeight="22">
-                                                <Run Text="{Binding Changelog, Mode=OneWay}"/>
-                                            </TextBlock>
-                                        </ScrollViewer>
-                                    </Border>
-                                </Grid>
-                            </materialDesign:Card>
-
-                            <!-- Download Progress & Actions -->
-                            <materialDesign:Card Grid.Row="2" Style="{StaticResource CardStyle}" Margin="10,0,10,10">
-                                <StackPanel>
-                                    <!-- Download Progress -->
-                                    <StackPanel Visibility="{Binding IsDownloading, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                              Margin="0,0,0,20">
-                                        <TextBlock FontSize="16"
-                                                 FontWeight="Medium"
-                                                 Margin="0,0,0,10">
-                                            <Run Text="{Binding DownloadProgressText, Mode=OneWay}"/>
-                                        </TextBlock>
-                                        <ProgressBar Value="{Binding DownloadProgress}"
-                                                   Height="8"
-                                                   Maximum="100"/>
-                                        <TextBlock HorizontalAlignment="Center"
-                                                 Margin="0,5,0,0"
-                                                 Opacity="0.7">
-                                            <Run Text="{Binding DownloadProgress, Mode=OneWay}"/>
-                                            <Run Text="%"/>
-                                        </TextBlock>
-                                    </StackPanel>
-
-                                    <!-- Action Buttons -->
-                                    <StackPanel Orientation="Horizontal"
-                                              HorizontalAlignment="Right"
-                                              Visibility="{Binding IsDownloading, Converter={StaticResource InverseBooleanToVisibilityConverter}}">
-                                        <Button Content="Cancel"
-                                              Command="{Binding CancelInstallationCommand}"
-                                              Style="{StaticResource CustomOutlinedButton}"
-                                              Height="40"
-                                              Margin="0,0,10,0"
-                                              Padding="25,0"/>
-
-                                        <Button Command="{Binding AcceptInstallationCommand}"
-                                              Style="{StaticResource MaterialDesignRaisedButton}"
-                                              Height="40"
-                                              Padding="25,0"
-                                              Background="#4CAF50">
-                                            <StackPanel Orientation="Horizontal">
-                                                <materialDesign:PackIcon Kind="Download"
-                                                                       Width="20"
-                                                                       Height="20"
-                                                                       VerticalAlignment="Center"
-                                                                       Margin="0,0,8,0"/>
-                                                <TextBlock Text="Download &amp; Install" VerticalAlignment="Center"/>
-                                            </StackPanel>
-                                        </Button>
-                                    </StackPanel>
-                                </StackPanel>
-                            </materialDesign:Card>
-                        </Grid>
                     </Grid>
                 </TabItem>
 
@@ -985,7 +630,7 @@
                             </Grid.RowDefinitions>
 
                             <!-- Header -->
-                            <materialDesign:Card Grid.Row="0" Style="{StaticResource CardStyle}" Margin="0,10,0,0">
+                            <materialDesign:Card Grid.Row="0" Style="{StaticResource CardStyle}">
                                 <StackPanel>
                                     <TextBlock Text="Cheat Menu"
                                              Style="{StaticResource MaterialDesignHeadline6TextBlock}"
@@ -994,61 +639,64 @@
                                     <TextBlock Text="Select a tool to use. Make sure the game is running before using these tools."
                                              Style="{StaticResource MaterialDesignBody2TextBlock}"
                                              Opacity="0.7"
-                                             TextWrapping="Wrap"/>
+                                             TextWrapping="Wrap"
+                                             Margin="0,0,0,10"/>
                                 </StackPanel>
                             </materialDesign:Card>
 
                             <!-- Tool Selection Cards -->
-                            <Grid Grid.Row="1" Margin="0,10,0,0">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
-
+                            <materialDesign:Card Grid.Row="1" Style="{StaticResource CardStyle}" Margin="-10,-10,0,0" VerticalAlignment="Top" Background="Transparent">
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Top">
                                 <!-- Ticket Editor Card -->
-                                <materialDesign:Card Grid.Column="0"
-                                                   Style="{StaticResource CardStyle}"
-                                                   Margin="0,0,10,0"
+                                <materialDesign:Card Style="{StaticResource CardStyle}"
+                                                   Margin="0"
+                                                   Padding="12,8,12,8"
+                                                   HorizontalAlignment="Left"
+                                                   VerticalAlignment="Top"
                                                    Cursor="Hand"
                                                    MouseLeftButtonUp="TicketEditorCard_Click">
                                     <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <materialDesign:PackIcon Kind="Ticket"
-                                                               Width="80"
-                                                               Height="80"
+                                                               Width="32"
+                                                               Height="32"
                                                                HorizontalAlignment="Center"
-                                                               Margin="0,20,0,20"
+                                                               Margin="0,0,0,4"
                                                                Foreground="{DynamicResource PrimaryHueMidBrush}"/>
 
                                         <TextBlock Text="Ticket Editor"
-                                                 Style="{StaticResource MaterialDesignHeadline5TextBlock}"
+                                                 FontSize="15"
+                                                 FontWeight="SemiBold"
                                                  HorizontalAlignment="Center"
-                                                 Margin="0,0,0,10"/>
+                                                 Margin="0,0,0,2"/>
 
-                                        <TextBlock Text="Edit in-game currency and other values"
-                                                 Style="{StaticResource MaterialDesignBody2TextBlock}"
-                                                 Opacity="0.7"
+                                        <TextBlock Text="Edit currency"
+                                                 FontSize="11"
+                                                 Opacity="0.6"
                                                  TextWrapping="Wrap"
                                                  TextAlignment="Center"
-                                                 Margin="20,0,20,20"/>
+                                                 Margin="4,0,4,4"/>
 
                                         <Button Command="{Binding MemoryEditor.SelectTicketEditorCommand}"
                                               Style="{StaticResource MaterialDesignRaisedButton}"
-                                              Height="45"
-                                              Margin="0,10,0,20">
+                                              Height="26"
+                                              Padding="10,0"
+                                              Margin="0,0,0,0">
                                             <StackPanel Orientation="Horizontal">
                                                 <materialDesign:PackIcon Kind="ChevronRight"
-                                                                       Width="20"
-                                                                       Height="20"
+                                                                       Width="14"
+                                                                       Height="14"
                                                                        VerticalAlignment="Center"
-                                                                       Margin="0,0,8,0"/>
-                                                <TextBlock Text="Open Editor"
+                                                                       Margin="0,0,4,0"/>
+                                                <TextBlock Text="Open"
+                                                         FontSize="11"
                                                          VerticalAlignment="Center"
                                                          FontWeight="Medium"/>
                                             </StackPanel>
                                         </Button>
                                     </StackPanel>
                                 </materialDesign:Card>
-                            </Grid>
+                            </StackPanel>
+                            </materialDesign:Card>
                         </Grid>
 
                         <!-- Ticket Editor View -->
@@ -1059,10 +707,10 @@
                             </Grid.RowDefinitions>
 
                             <!-- Header -->
-                            <materialDesign:Card Grid.Row="0" Style="{StaticResource CardStyle}" Margin="0,10,0,0">
+                            <materialDesign:Card Grid.Row="0" Style="{StaticResource CardStyle}">
                                 <StackPanel>
                                     <Button Command="{Binding MemoryEditor.BackToMenuCommand}"
-                                          Style="{StaticResource CustomOutlinedButton}"
+                                          Style="{StaticResource MaterialDesignOutlinedButton}"
                                           HorizontalAlignment="Left"
                                           Margin="0,0,0,15"
                                           Height="35">
@@ -1082,73 +730,93 @@
                                              Style="{StaticResource MaterialDesignBody2TextBlock}"
                                              Opacity="0.7"
                                              TextWrapping="Wrap"
-                                             Margin="0,0,0,15"/>
+                                             Margin="0,0,0,10"/>
+                                </StackPanel>
+                            </materialDesign:Card>
 
-                                <!-- Attach Button and Status -->
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
+                            <materialDesign:Card Grid.Row="1" Style="{StaticResource CardStyle}" Margin="10">
+                            <StackPanel>
+                                <Border Background="{DynamicResource MaterialDesignDivider}"
+                                       CornerRadius="8"
+                                       Margin="0,0,0,20">
+                                    <Grid Margin="15">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
 
-                                    <Button Grid.Column="0"
-                                          Command="{Binding MemoryEditor.AttachToProcessCommand}"
-                                          Style="{StaticResource MaterialDesignRaisedButton}"
-                                          Height="45"
-                                          Margin="0,0,15,0"
-                                          Background="#4CAF50">
-                                        <StackPanel Orientation="Horizontal">
-                                            <materialDesign:PackIcon Kind="Link"
-                                                                   Width="20"
-                                                                   Height="20"
-                                                                   VerticalAlignment="Center"
-                                                                   Margin="0,0,8,0"/>
-                                            <TextBlock Text="Attach to Game"
-                                                     VerticalAlignment="Center"
-                                                     FontWeight="Medium"/>
+                                        <materialDesign:PackIcon Grid.Column="0"
+                                                               Kind="Ticket"
+                                                               Width="32"
+                                                               Height="32"
+                                                               VerticalAlignment="Center"
+                                                               Margin="0,0,15,0"
+                                                               Foreground="{DynamicResource PrimaryHueMidBrush}"/>
+
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                            <TextBlock Text="Current Status"
+                                                     FontSize="12"
+                                                     Opacity="0.7"/>
+                                            <TextBlock Text="{Binding MemoryEditor.StatusMessage}"
+                                                     FontSize="24"
+                                                     FontWeight="Bold"
+                                                     Margin="0,5,0,0"/>
+                                            <TextBlock Text="Click attach to connect to the game"
+                                                     FontSize="11"
+                                                     Opacity="0.6"
+                                                     Margin="0,5,0,0"
+                                                     FontStyle="Italic"/>
                                         </StackPanel>
-                                    </Button>
 
-                                    <Button Grid.Column="0"
-                                          Command="{Binding MemoryEditor.DetachFromProcessCommand}"
-                                          Style="{StaticResource MaterialDesignRaisedButton}"
-                                          Height="45"
-                                          Margin="0,0,15,0"
-                                          Background="#D32F2F"
-                                          Visibility="{Binding MemoryEditor.IsAttached, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                        <StackPanel Orientation="Horizontal">
-                                            <materialDesign:PackIcon Kind="LinkOff"
-                                                                   Width="20"
-                                                                   Height="20"
-                                                                   VerticalAlignment="Center"
-                                                                   Margin="0,0,8,0"/>
-                                            <TextBlock Text="Detach"
-                                                     VerticalAlignment="Center"
-                                                     FontWeight="Medium"/>
-                                        </StackPanel>
-                                    </Button>
+                                        <Button Grid.Column="2"
+                                              Command="{Binding MemoryEditor.AttachToProcessCommand}"
+                                              Style="{StaticResource MaterialDesignRaisedButton}"
+                                              Height="45"
+                                              VerticalAlignment="Center"
+                                              Background="#4CAF50">
+                                            <StackPanel Orientation="Horizontal">
+                                                <materialDesign:PackIcon Kind="Link"
+                                                                       Width="20"
+                                                                       Height="20"
+                                                                       VerticalAlignment="Center"
+                                                                       Margin="0,0,8,0"/>
+                                                <TextBlock Text="Attach to Game"
+                                                         VerticalAlignment="Center"
+                                                         FontWeight="Medium"/>
+                                            </StackPanel>
+                                        </Button>
 
-                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                        <TextBlock Text="Status:"
-                                                 Style="{StaticResource MaterialDesignCaptionTextBlock}"
-                                                 Opacity="0.7"/>
-                                        <TextBlock Text="{Binding MemoryEditor.StatusMessage}"
-                                                 Style="{StaticResource MaterialDesignBody1TextBlock}"
-                                                 FontWeight="Medium"/>
-                                    </StackPanel>
-                                </Grid>
-                            </StackPanel>
-                        </materialDesign:Card>
+                                        <Button Grid.Column="2"
+                                              Command="{Binding MemoryEditor.DetachFromProcessCommand}"
+                                              Style="{StaticResource MaterialDesignRaisedButton}"
+                                              Height="45"
+                                              VerticalAlignment="Center"
+                                              Background="#D32F2F"
+                                              Visibility="{Binding MemoryEditor.IsAttached, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                            <StackPanel Orientation="Horizontal">
+                                                <materialDesign:PackIcon Kind="LinkOff"
+                                                                       Width="20"
+                                                                       Height="20"
+                                                                       VerticalAlignment="Center"
+                                                                       Margin="0,0,8,0"/>
+                                                <TextBlock Text="Detach"
+                                                         VerticalAlignment="Center"
+                                                         FontWeight="Medium"/>
+                                            </StackPanel>
+                                        </Button>
+                                    </Grid>
+                                </Border>
 
                         <!-- Content Area with Left Panel -->
-                        <Grid Grid.Row="1" Margin="0,10,0,0">
+                        <Grid Margin="0,20,0,0">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="2*"/>
                                 <ColumnDefinition Width="3*"/>
                             </Grid.ColumnDefinitions>
 
                             <!-- Left Panel - Values List -->
-                            <materialDesign:Card Grid.Column="0" Style="{StaticResource CardStyle}" Margin="0,0,10,0">
+                            <materialDesign:Card Grid.Column="0" Style="{StaticResource CardStyle}" Margin="0,0,10,0" VerticalAlignment="Top">
                                 <Grid>
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="Auto"/>
@@ -1209,8 +877,8 @@
 
                                     <Button Grid.Row="2"
                                           Command="{Binding MemoryEditor.RefreshValuesCommand}"
-                                          Style="{StaticResource CustomOutlinedButton}"
-                                          Margin="0,15,0,0"
+                                          Style="{StaticResource MaterialDesignOutlinedButton}"
+                                          Margin="0,0,5,0"
                                           Height="40">
                                         <StackPanel Orientation="Horizontal">
                                             <materialDesign:PackIcon Kind="Refresh"
@@ -1223,22 +891,9 @@
                             </materialDesign:Card>
 
                             <!-- Right Panel - Editor -->
-                            <materialDesign:Card Grid.Column="1" Style="{StaticResource CardStyle}" Margin="10,0,0,0">
+                            <materialDesign:Card Grid.Column="1" Style="{StaticResource CardStyle}" Margin="10,-10,0,0">
                                 <Grid>
                                     <StackPanel Visibility="{Binding MemoryEditor.SelectedValue, Converter={StaticResource NullToVisibilityConverter}}">
-                                        <TextBlock Text="Edit Value"
-                                                 Style="{StaticResource MaterialDesignHeadline6TextBlock}"
-                                                 Margin="0,0,0,20"/>
-
-                                        <!-- Value Name -->
-                                        <TextBlock Text="Name:"
-                                                 Style="{StaticResource MaterialDesignBody2TextBlock}"
-                                                 Opacity="0.7"
-                                                 Margin="0,0,0,5"/>
-                                        <TextBlock Text="{Binding MemoryEditor.SelectedValue.Name}"
-                                                 Style="{StaticResource MaterialDesignHeadline5TextBlock}"
-                                                 Margin="0,0,0,20"/>
-
                                         <!-- Description -->
                                         <TextBlock Text="Description:"
                                                  Style="{StaticResource MaterialDesignBody2TextBlock}"
@@ -1349,6 +1004,671 @@
                                 </Grid>
                             </materialDesign:Card>
                         </Grid>
+                            </StackPanel>
+                        </materialDesign:Card>
+                        </Grid>
+                    </Grid>
+                </TabItem>
+
+                <!-- Mod Manager Tab -->
+                <TabItem>
+                    <TabItem.Header>
+                        <StackPanel Width="80" Margin="4">
+                            <materialDesign:PackIcon Kind="Puzzle"
+                                                   Width="20"
+                                                   Height="20"
+                                                   HorizontalAlignment="Center"
+                                                   Margin="0,0,0,8"/>
+                            <TextBlock Text="Mod&#x0a;Manager"
+                                     HorizontalAlignment="Center"
+                                     TextAlignment="Center"
+                                     FontSize="10"
+                                     LineHeight="12"/>
+                        </StackPanel>
+                    </TabItem.Header>
+
+                    <Grid Margin="20">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Header -->
+                        <materialDesign:Card Grid.Row="0" Style="{StaticResource CardStyle}">
+                            <StackPanel>
+                                <TextBlock Text="Mod Manager"
+                                         Style="{StaticResource MaterialDesignHeadline6TextBlock}"
+                                         Margin="0,0,0,15"/>
+
+                                <TextBlock Text="Manage your game mods. Enable or disable mods by toggling them on/off."
+                                         Style="{StaticResource MaterialDesignBody2TextBlock}"
+                                         Opacity="0.7"
+                                         TextWrapping="Wrap"
+                                         Margin="0,0,0,10"/>
+
+                                <!-- Stats Banner -->
+                                <Border Background="{DynamicResource MaterialDesignDivider}"
+                                       CornerRadius="8"
+                                       Margin="0,10,0,0">
+                                    <Grid Margin="15">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <StackPanel Grid.Column="0" HorizontalAlignment="Center">
+                                            <TextBlock Text="Total Mods"
+                                                     FontSize="11"
+                                                     Opacity="0.7"
+                                                     HorizontalAlignment="Center"/>
+                                            <TextBlock Text="{Binding ModManager.TotalModCount}"
+                                                     FontSize="24"
+                                                     FontWeight="Bold"
+                                                     HorizontalAlignment="Center"
+                                                     Foreground="{DynamicResource PrimaryHueMidBrush}"/>
+                                        </StackPanel>
+
+                                        <StackPanel Grid.Column="1" HorizontalAlignment="Center">
+                                            <TextBlock Text="Enabled"
+                                                     FontSize="11"
+                                                     Opacity="0.7"
+                                                     HorizontalAlignment="Center"/>
+                                            <TextBlock Text="{Binding ModManager.EnabledModCount}"
+                                                     FontSize="24"
+                                                     FontWeight="Bold"
+                                                     HorizontalAlignment="Center"
+                                                     Foreground="#4CAF50"/>
+                                        </StackPanel>
+
+                                        <StackPanel Grid.Column="2" HorizontalAlignment="Center">
+                                            <TextBlock Text="Disabled"
+                                                     FontSize="11"
+                                                     Opacity="0.7"
+                                                     HorizontalAlignment="Center"/>
+                                            <TextBlock Text="{Binding ModManager.DisabledModCount}"
+                                                     FontSize="24"
+                                                     FontWeight="Bold"
+                                                     HorizontalAlignment="Center"
+                                                     Foreground="#FF6B00"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </StackPanel>
+                        </materialDesign:Card>
+
+                        <!-- Mods List -->
+                        <materialDesign:Card Grid.Row="1" Style="{StaticResource CardStyle}" Margin="10">
+                            <DataGrid ItemsSource="{Binding ModManager.Mods}"
+                                    SelectedItem="{Binding ModManager.SelectedMod}"
+                                    AutoGenerateColumns="False"
+                                    CanUserAddRows="False"
+                                    CanUserDeleteRows="False"
+                                    SelectionMode="Single"
+                                    IsReadOnly="True"
+                                    materialDesign:DataGridAssist.CellPadding="8 4 8 4"
+                                    materialDesign:DataGridAssist.ColumnHeaderPadding="8">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="#"
+                                                      Binding="{Binding PriorityDisplay}"
+                                                      Width="40"/>
+                                    <DataGridTemplateColumn Header="Status" Width="100">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <Border Background="{Binding StatusColor}"
+                                                       CornerRadius="4"
+                                                       Padding="8,4">
+                                                    <TextBlock Text="{Binding StatusText}"
+                                                             Foreground="White"
+                                                             FontWeight="Medium"
+                                                             HorizontalAlignment="Center"/>
+                                                </Border>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                    <DataGridTextColumn Header="Mod Name"
+                                                      Binding="{Binding Name}"
+                                                      Width="2*"/>
+                                    <DataGridTextColumn Header="Version"
+                                                      Binding="{Binding VersionDisplay}"
+                                                      Width="Auto"/>
+                                    <DataGridTemplateColumn Header="Update" Width="120">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <Button Background="{Binding UpdateStatusColor}"
+                                                       BorderThickness="0"
+                                                       Padding="8,4"
+                                                       Cursor="Hand"
+                                                       Command="{Binding DataContext.ModManager.ShowUpdateDialogCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                       CommandParameter="{Binding}"
+                                                       IsEnabled="{Binding HasUpdate}">
+                                                    <Button.Style>
+                                                        <Style TargetType="Button" BasedOn="{StaticResource MaterialDesignRaisedButton}">
+                                                            <Setter Property="materialDesign:ButtonAssist.CornerRadius" Value="4"/>
+                                                        </Style>
+                                                    </Button.Style>
+                                                    <TextBlock Text="{Binding UpdateStatusText}"
+                                                             Foreground="White"
+                                                             FontWeight="Medium"
+                                                             FontSize="11"
+                                                             HorizontalAlignment="Center"/>
+                                                </Button>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                    <DataGridTextColumn Header="Files"
+                                                      Binding="{Binding FileCount}"
+                                                      Width="Auto"/>
+                                    <DataGridTextColumn Header="Total Size"
+                                                      Binding="{Binding FileSizeFormatted}"
+                                                      Width="Auto"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </materialDesign:Card>
+
+                        <!-- Action Buttons -->
+                        <materialDesign:Card Grid.Row="2" Style="{StaticResource CardStyle}">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <!-- Main Actions -->
+                                <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,10">
+                                    <Button Command="{Binding ModManager.ToggleModCommand}"
+                                          Style="{StaticResource MaterialDesignRaisedButton}"
+                                          Height="45"
+                                          Margin="5"
+                                          Padding="15,0">
+                                        <StackPanel Orientation="Horizontal">
+                                            <materialDesign:PackIcon Kind="SwapHorizontal"
+                                                                   Width="20"
+                                                                   Height="20"
+                                                                   VerticalAlignment="Center"
+                                                                   Margin="0,0,8,0"/>
+                                            <TextBlock Text="Toggle Selected" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Button>
+
+                                    <Button Command="{Binding ModManager.EnableAllModsCommand}"
+                                          Style="{StaticResource MaterialDesignRaisedButton}"
+                                          Height="45"
+                                          Margin="5"
+                                          Padding="15,0"
+                                          Background="#4CAF50">
+                                        <StackPanel Orientation="Horizontal">
+                                            <materialDesign:PackIcon Kind="CheckAll"
+                                                                   Width="20"
+                                                                   Height="20"
+                                                                   VerticalAlignment="Center"
+                                                                   Margin="0,0,8,0"/>
+                                            <TextBlock Text="Enable All" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Button>
+
+                                    <Button Command="{Binding ModManager.DisableAllModsCommand}"
+                                          Style="{StaticResource MaterialDesignRaisedButton}"
+                                          Height="45"
+                                          Margin="5"
+                                          Padding="15,0"
+                                          Background="#FF6B00">
+                                        <StackPanel Orientation="Horizontal">
+                                            <materialDesign:PackIcon Kind="CloseCircle"
+                                                                   Width="20"
+                                                                   Height="20"
+                                                                   VerticalAlignment="Center"
+                                                                   Margin="0,0,8,0"/>
+                                            <TextBlock Text="Disable All" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Button>
+
+                                    <Button Command="{Binding ModManager.OpenModsFolderCommand}"
+                                          Style="{StaticResource MaterialDesignOutlinedButton}"
+                                          Height="45"
+                                          Margin="5"
+                                          Padding="15,0">
+                                        <StackPanel Orientation="Horizontal">
+                                            <materialDesign:PackIcon Kind="FolderOpen"
+                                                                   Width="20"
+                                                                   Height="20"
+                                                                   VerticalAlignment="Center"
+                                                                   Margin="0,0,8,0"/>
+                                            <TextBlock Text="Open Folder" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Button>
+
+                                    <Button Command="{Binding ModManager.CheckForUpdatesCommand}"
+                                          Style="{StaticResource MaterialDesignOutlinedButton}"
+                                          Height="45"
+                                          Margin="5"
+                                          Padding="15,0">
+                                        <StackPanel Orientation="Horizontal">
+                                            <materialDesign:PackIcon Kind="CloudDownload"
+                                                                   Width="20"
+                                                                   Height="20"
+                                                                   VerticalAlignment="Center"
+                                                                   Margin="0,0,8,0"/>
+                                            <TextBlock Text="Check Updates" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Button>
+
+                                    <Button Command="{Binding ModManager.RefreshModsCommand}"
+                                          Style="{StaticResource MaterialDesignIconButton}"
+                                          ToolTip="Refresh"
+                                          Margin="5">
+                                        <materialDesign:PackIcon Kind="Refresh" Width="24" Height="24"/>
+                                    </Button>
+                                </StackPanel>
+
+                                <!-- Priority Mode Controls -->
+                                <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center">
+                                    <Button Command="{Binding ModManager.TogglePriorityModeCommand}"
+                                          Height="40"
+                                          Margin="5,0"
+                                          Padding="15,0">
+                                        <Button.Style>
+                                            <Style TargetType="Button" BasedOn="{StaticResource MaterialDesignRaisedButton}">
+                                                <Setter Property="Background" Value="#808080"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding ModManager.IsPriorityMode}" Value="True">
+                                                        <Setter Property="Background" Value="#9C27B0"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Button.Style>
+                                        <StackPanel Orientation="Horizontal">
+                                            <materialDesign:PackIcon Kind="FormatListNumbered"
+                                                                   Width="18"
+                                                                   Height="18"
+                                                                   VerticalAlignment="Center"
+                                                                   Margin="0,0,8,0"/>
+                                            <TextBlock VerticalAlignment="Center">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Text" Value="Enable Priority"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding ModManager.IsPriorityMode}" Value="True">
+                                                                <Setter Property="Text" Value="Disable Priority"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                        </StackPanel>
+                                    </Button>
+
+                                    <Button Command="{Binding ModManager.MoveModUpCommand}"
+                                          Style="{StaticResource MaterialDesignOutlinedButton}"
+                                          Height="40"
+                                          Margin="5,0"
+                                          Padding="12,0"
+                                          ToolTip="Move selected mod up"
+                                          Visibility="{Binding ModManager.IsPriorityMode, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                        <materialDesign:PackIcon Kind="ArrowUp" Width="18" Height="18"/>
+                                    </Button>
+
+                                    <Button Command="{Binding ModManager.MoveModDownCommand}"
+                                          Style="{StaticResource MaterialDesignOutlinedButton}"
+                                          Height="40"
+                                          Margin="5,0"
+                                          Padding="12,0"
+                                          ToolTip="Move selected mod down"
+                                          Visibility="{Binding ModManager.IsPriorityMode, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                        <materialDesign:PackIcon Kind="ArrowDown" Width="18" Height="18"/>
+                                    </Button>
+
+                                    <TextBlock Text="Priority mode active - use arrows or drag-and-drop to reorder"
+                                             VerticalAlignment="Center"
+                                             Margin="15,0,0,0"
+                                             FontStyle="Italic"
+                                             Opacity="0.7"
+                                             Visibility="{Binding ModManager.IsPriorityMode, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                </StackPanel>
+                            </Grid>
+                        </materialDesign:Card>
+                    </Grid>
+                </TabItem>
+
+                <TabItem>
+                    <TabItem.Header>
+                        <StackPanel Width="80" Margin="4">
+                            <materialDesign:PackIcon Kind="CloudDownload"
+                                                   Width="20"
+                                                   Height="20"
+                                                   HorizontalAlignment="Center"
+                                                   Margin="0,0,0,8"/>
+                            <TextBlock Text="Updates"
+                                     HorizontalAlignment="Center"
+                                     TextAlignment="Center"
+                                     FontSize="10"
+                                     LineHeight="12"/>
+                        </StackPanel>
+                    </TabItem.Header>
+
+                    <Grid Margin="20">
+                        <Grid Visibility="{Binding ShowingInstallationView, Converter={StaticResource InverseBooleanToVisibilityConverter}}">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <materialDesign:Card Grid.Row="0" Style="{StaticResource CardStyle}">
+                                <StackPanel>
+                                    <TextBlock Text="App Updates"
+                                             Style="{StaticResource MaterialDesignHeadline6TextBlock}"
+                                             Margin="0,0,0,15"/>
+
+                                    <TextBlock Text="Check for updates and download the latest version from GitHub."
+                                             Style="{StaticResource MaterialDesignBody2TextBlock}"
+                                             Opacity="0.7"
+                                             TextWrapping="Wrap"
+                                             Margin="0,0,0,10"/>
+                                </StackPanel>
+                            </materialDesign:Card>
+
+                            <materialDesign:Card Grid.Row="1" Style="{StaticResource CardStyle}" Margin="10">
+                            <StackPanel>
+                                <Border Background="{DynamicResource MaterialDesignDivider}"
+                                       CornerRadius="8"
+                                       Margin="0,0,0,20"
+                                       Cursor="Hand"
+                                       MouseLeftButtonUp="CheckForUpdatesBanner_Click">
+                                    <Grid Margin="15">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <materialDesign:PackIcon Grid.Column="0"
+                                                               Kind="Information"
+                                                               Width="32"
+                                                               Height="32"
+                                                               VerticalAlignment="Center"
+                                                               Margin="0,0,15,0"
+                                                               Foreground="{DynamicResource PrimaryHueMidBrush}"/>
+
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                            <TextBlock Text="Current Version"
+                                                     FontSize="12"
+                                                     Opacity="0.7"/>
+                                            <TextBlock FontSize="24"
+                                                     FontWeight="Bold"
+                                                     Margin="0,5,0,0">
+                                                <Run Text="{Binding CurrentVersion, Mode=OneWay}"/>
+                                            </TextBlock>
+                                            <TextBlock Text="Click here to check for updates"
+                                                     FontSize="11"
+                                                     Opacity="0.6"
+                                                     Margin="0,5,0,0"
+                                                     FontStyle="Italic"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+
+                                <Border x:Name="UpdateStatusBorder"
+                                       Background="{Binding UpdateStatusColor}"
+                                       CornerRadius="8"
+                                       Margin="0,0,0,20"
+                                       Visibility="{Binding HasCheckedForUpdates, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                       Cursor="{Binding UpdateStatusCursor}"
+                                       MouseLeftButtonUp="UpdateStatusButton_Click">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsUpdateAvailable}" Value="False">
+                                                    <Setter Property="IsEnabled" Value="False"/>
+                                                    <Setter Property="Cursor" Value="Arrow"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                    <Grid Margin="15">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <materialDesign:PackIcon Grid.Column="0"
+                                                               Kind="{Binding UpdateStatusIcon}"
+                                                               Width="32"
+                                                               Height="32"
+                                                               VerticalAlignment="Center"
+                                                               Margin="0,0,15,0"
+                                                               Foreground="White"/>
+
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                            <TextBlock FontSize="20"
+                                                     Foreground="White"
+                                                     FontWeight="Bold">
+                                                <Run Text="{Binding UpdateStatusTitle, Mode=OneWay}"/>
+                                            </TextBlock>
+                                            <TextBlock FontSize="14"
+                                                     Foreground="White"
+                                                     Opacity="0.9"
+                                                     TextWrapping="Wrap"
+                                                     Margin="0,5,0,0">
+                                                <Run Text="{Binding UpdateStatusMessage, Mode=OneWay}"/>
+                                            </TextBlock>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+
+                                <StackPanel Visibility="{Binding IsUpdateAvailable, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                          Margin="0,0,0,20">
+                                    <TextBlock Text="New Version Details"
+                                             Style="{StaticResource MaterialDesignBody1TextBlock}"
+                                             FontWeight="Medium"
+                                             Margin="0,0,0,10"/>
+
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+
+                                        <TextBlock Grid.Row="0" Grid.Column="0"
+                                                 Text="Latest Version:"
+                                                 Margin="0,5"
+                                                 Opacity="0.7"/>
+                                        <TextBlock Grid.Row="0" Grid.Column="1"
+                                                 Text="{Binding LatestVersion, FallbackValue=N/A}"
+                                                 Margin="10,5"
+                                                 FontWeight="Medium"/>
+
+                                        <TextBlock Grid.Row="1" Grid.Column="0"
+                                                 Text="File Name:"
+                                                 Margin="0,5"
+                                                 Opacity="0.7"/>
+                                        <TextBlock Grid.Row="1" Grid.Column="1"
+                                                 Text="{Binding UpdateFileName}"
+                                                 Margin="10,5"
+                                                 FontWeight="Medium"/>
+
+                                        <TextBlock Grid.Row="2" Grid.Column="0"
+                                                 Text="File Size:"
+                                                 Margin="0,5"
+                                                 Opacity="0.7"/>
+                                        <TextBlock Grid.Row="2" Grid.Column="1"
+                                                 Text="{Binding UpdateFileSize}"
+                                                 Margin="10,5"
+                                                 FontWeight="Medium"/>
+                                    </Grid>
+                                </StackPanel>
+
+                                <StackPanel Visibility="{Binding IsDownloading, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                          Margin="0,0,0,20">
+                                    <TextBlock Text="Downloading Update..."
+                                             Style="{StaticResource MaterialDesignBody1TextBlock}"
+                                             FontWeight="Medium"
+                                             Margin="0,0,0,10"/>
+                                    <ProgressBar Value="{Binding DownloadProgress}"
+                                               Height="8"
+                                               Maximum="100"/>
+                                    <TextBlock Text="{Binding DownloadProgressText}"
+                                             Style="{StaticResource MaterialDesignCaptionTextBlock}"
+                                             Opacity="0.7"
+                                             Margin="0,5,0,0"
+                                             HorizontalAlignment="Center"/>
+                                </StackPanel>
+
+                                <TextBlock Text="Click the banner above to start the update"
+                                         Style="{StaticResource MaterialDesignCaptionTextBlock}"
+                                         Opacity="0.7"
+                                         HorizontalAlignment="Center"
+                                         Margin="0,10,0,0"
+                                         Visibility="{Binding IsUpdateAvailable, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                            </StackPanel>
+                        </materialDesign:Card>
+                        </Grid>
+
+                        <Grid Visibility="{Binding ShowingInstallationView, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <materialDesign:Card Grid.Row="0" Style="{StaticResource CardStyle}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <materialDesign:PackIcon Grid.Column="0"
+                                                           Kind="Cloud"
+                                                           Width="48"
+                                                           Height="48"
+                                                           VerticalAlignment="Center"
+                                                           Margin="0,0,20,0"
+                                                           Foreground="{DynamicResource PrimaryHueMidBrush}"/>
+
+                                    <StackPanel Grid.Column="1">
+                                        <TextBlock Text="Update Available!"
+                                                 Style="{StaticResource MaterialDesignHeadline5TextBlock}"
+                                                 Margin="0,0,0,10"/>
+                                        <TextBlock FontSize="16"
+                                                 Opacity="0.8">
+                                            <Run Text="Version"/>
+                                            <Run Text="{Binding LatestVersion, Mode=OneWay}" FontWeight="Bold"/>
+                                            <Run Text="is ready to install"/>
+                                        </TextBlock>
+                                        <Grid Margin="0,10,0,0">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                            </Grid.RowDefinitions>
+
+                                            <TextBlock Grid.Row="0" Grid.Column="0"
+                                                     Text="File Name:"
+                                                     Margin="0,5,10,5"
+                                                     Opacity="0.7"/>
+                                            <TextBlock Grid.Row="0" Grid.Column="1"
+                                                     Margin="0,5"
+                                                     FontWeight="Medium">
+                                                <Run Text="{Binding UpdateFileName, Mode=OneWay}"/>
+                                            </TextBlock>
+
+                                            <TextBlock Grid.Row="1" Grid.Column="0"
+                                                     Text="File Size:"
+                                                     Margin="0,5,10,5"
+                                                     Opacity="0.7"/>
+                                            <TextBlock Grid.Row="1" Grid.Column="1"
+                                                     Margin="0,5"
+                                                     FontWeight="Medium">
+                                                <Run Text="{Binding UpdateFileSize, Mode=OneWay}"/>
+                                            </TextBlock>
+                                        </Grid>
+                                    </StackPanel>
+                                </Grid>
+                            </materialDesign:Card>
+
+                            <materialDesign:Card Grid.Row="1" Style="{StaticResource CardStyle}" Margin="10">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+
+                                    <TextBlock Grid.Row="0"
+                                             Text="What's New:"
+                                             Style="{StaticResource MaterialDesignHeadline6TextBlock}"
+                                             Margin="0,0,0,15"/>
+
+                                    <Border Grid.Row="1"
+                                          Background="{DynamicResource MaterialDesignDivider}"
+                                          CornerRadius="8"
+                                          Padding="15">
+                                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                            <TextBlock TextWrapping="Wrap"
+                                                     FontFamily="Consolas"
+                                                     FontSize="13"
+                                                     LineHeight="22">
+                                                <Run Text="{Binding Changelog, Mode=OneWay}"/>
+                                            </TextBlock>
+                                        </ScrollViewer>
+                                    </Border>
+                                </Grid>
+                            </materialDesign:Card>
+
+                            <materialDesign:Card Grid.Row="2" Style="{StaticResource CardStyle}" Margin="10,0,10,10">
+                                <StackPanel>
+                                    <StackPanel Visibility="{Binding IsDownloading, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                              Margin="0,0,0,20">
+                                        <TextBlock FontSize="16"
+                                                 FontWeight="Medium"
+                                                 Margin="0,0,0,10">
+                                            <Run Text="{Binding DownloadProgressText, Mode=OneWay}"/>
+                                        </TextBlock>
+                                        <ProgressBar Value="{Binding DownloadProgress}"
+                                                   Height="8"
+                                                   Maximum="100"/>
+                                        <TextBlock HorizontalAlignment="Center"
+                                                 Margin="0,5,0,0"
+                                                 Opacity="0.7">
+                                            <Run Text="{Binding DownloadProgress, Mode=OneWay}"/>
+                                            <Run Text="%"/>
+                                        </TextBlock>
+                                    </StackPanel>
+
+                                    <StackPanel Orientation="Horizontal"
+                                              HorizontalAlignment="Right"
+                                              Visibility="{Binding IsDownloading, Converter={StaticResource InverseBooleanToVisibilityConverter}}">
+                                        <Button Content="Cancel"
+                                              Command="{Binding CancelInstallationCommand}"
+                                              Style="{StaticResource MaterialDesignOutlinedButton}"
+                                              Height="40"
+                                              Margin="0,0,10,0"
+                                              Padding="25,0"/>
+
+                                        <Button Command="{Binding AcceptInstallationCommand}"
+                                              Style="{StaticResource MaterialDesignRaisedButton}"
+                                              Height="40"
+                                              Padding="25,0"
+                                              Background="#4CAF50">
+                                            <StackPanel Orientation="Horizontal">
+                                                <materialDesign:PackIcon Kind="Download"
+                                                                       Width="20"
+                                                                       Height="20"
+                                                                       VerticalAlignment="Center"
+                                                                       Margin="0,0,8,0"/>
+                                                <TextBlock Text="Download &amp; Install" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Button>
+                                    </StackPanel>
+                                </StackPanel>
+                            </materialDesign:Card>
                         </Grid>
                     </Grid>
                 </TabItem>
