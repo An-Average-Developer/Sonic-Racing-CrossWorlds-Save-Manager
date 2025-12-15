@@ -1,6 +1,7 @@
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Input;
@@ -23,6 +24,12 @@ namespace SonicRacingSaveManager.Features.MemoryEditor.ViewModels
         private bool _autoRefresh = true;
         private int _lastKnownGoodTicketValue = 0;
         private string _selectedTool = "menu";
+        private bool _isTicketsFrozen = false;
+
+        // Freeze configuration for tickets
+        private const long TICKET_FREEZE_ADDRESS = 0x4D49E2D;
+        private static readonly byte[] FREEZE_BYTES = new byte[] { 0x90, 0x90, 0x90 }; // NOP instructions
+        private static readonly byte[] ORIGINAL_BYTES = new byte[] { 0x89, 0x5E, 0x58 }; // mov [rsi+58],ebx
 
         public MemoryEditorViewModel()
         {
@@ -34,6 +41,7 @@ namespace SonicRacingSaveManager.Features.MemoryEditor.ViewModels
             ApplyValueCommand = new RelayCommand(ApplyValue, CanApplyValue);
             SelectTicketEditorCommand = new RelayCommand(() => SelectedTool = "tickets");
             BackToMenuCommand = new RelayCommand(() => SelectedTool = "menu");
+            ToggleTicketsFreezeCommand = new RelayCommand(ToggleTicketsFreeze, CanToggleTicketsFreeze);
 
             MemoryValues = new ObservableCollection<MemoryValue>
             {
@@ -41,8 +49,8 @@ namespace SonicRacingSaveManager.Features.MemoryEditor.ViewModels
                 {
                     Name = "Tickets",
                     Description = "In-game currency for purchases",
-                    BaseAddress = 0x08472CE0,
-                    Offsets = new int[] { 0x10, 0x10, 0x1D8, 0x108, 0x2D8, 0xD8, 0x58 },
+                    BaseAddress = 0x086A17E0,
+                    Offsets = new int[] { 0x6B0, 0x28, 0x8, 0x2D8, 0xD8, 0x58 },
                     CurrentValue = 0,
                     NewValue = 0
                 }
@@ -130,12 +138,23 @@ namespace SonicRacingSaveManager.Features.MemoryEditor.ViewModels
             }
         }
 
+        public bool IsTicketsFrozen
+        {
+            get => _isTicketsFrozen;
+            set
+            {
+                _isTicketsFrozen = value;
+                OnPropertyChanged();
+            }
+        }
+
         public ICommand AttachToProcessCommand { get; }
         public ICommand DetachFromProcessCommand { get; }
         public ICommand RefreshValuesCommand { get; }
         public ICommand ApplyValueCommand { get; }
         public ICommand SelectTicketEditorCommand { get; }
         public ICommand BackToMenuCommand { get; }
+        public ICommand ToggleTicketsFreezeCommand { get; }
 
         private bool CanAttachToProcess(object? parameter)
         {
@@ -182,6 +201,14 @@ namespace SonicRacingSaveManager.Features.MemoryEditor.ViewModels
             try
             {
                 _updateTimer.Stop();
+
+                // Restore original bytes if frozen
+                if (IsTicketsFrozen)
+                {
+                    _memoryService.WriteBytes(TICKET_FREEZE_ADDRESS, ORIGINAL_BYTES);
+                }
+
+                IsTicketsFrozen = false;
                 _memoryService.DetachFromProcess();
                 IsAttached = false;
                 _lastKnownGoodTicketValue = 0;
@@ -315,6 +342,7 @@ namespace SonicRacingSaveManager.Features.MemoryEditor.ViewModels
                 if (!_memoryService.IsProcessRunning())
                 {
                     _updateTimer.Stop();
+                    IsTicketsFrozen = false;
                     _memoryService.DetachFromProcess();
                     IsAttached = false;
                     _lastKnownGoodTicketValue = 0;
@@ -363,6 +391,71 @@ namespace SonicRacingSaveManager.Features.MemoryEditor.ViewModels
             {
                 StatusMessage = $"Error while searching for game: {ex.Message}";
             }
+        }
+
+        private bool CanToggleTicketsFreeze(object? parameter)
+        {
+            return IsAttached;
+        }
+
+        private void ToggleTicketsFreeze(object? parameter)
+        {
+            if (!IsAttached)
+                return;
+
+            try
+            {
+                bool success;
+                if (!IsTicketsFrozen)
+                {
+                    // Write NOP bytes to freeze
+                    success = _memoryService.WriteBytes(TICKET_FREEZE_ADDRESS, FREEZE_BYTES);
+                    if (success)
+                    {
+                        IsTicketsFrozen = true;
+                        StatusMessage = "Tickets frozen - unlimited tickets enabled!";
+                    }
+                    else
+                    {
+                        StatusMessage = "Failed to freeze tickets";
+                        MessageBox.Show(
+                            "Failed to freeze tickets. Make sure the game is running and you are attached to the process.",
+                            "Freeze Failed",
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Error);
+                    }
+                }
+                else
+                {
+                    // Restore original bytes to unfreeze
+                    success = _memoryService.WriteBytes(TICKET_FREEZE_ADDRESS, ORIGINAL_BYTES);
+                    if (success)
+                    {
+                        IsTicketsFrozen = false;
+                        StatusMessage = "Tickets unfrozen";
+                    }
+                    else
+                    {
+                        StatusMessage = "Failed to unfreeze tickets";
+                        MessageBox.Show(
+                            "Failed to unfreeze tickets.",
+                            "Unfreeze Failed",
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Error);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Error toggling freeze: {ex.Message}";
+                MessageBox.Show(
+                    $"Error occurred while toggling freeze:\n\n{ex.Message}",
+                    "Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+            }
+
+            ((RelayCommand)ToggleTicketsFreezeCommand).RaiseCanExecuteChanged();
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;

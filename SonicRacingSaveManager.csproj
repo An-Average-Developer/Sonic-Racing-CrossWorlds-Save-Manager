@@ -8,7 +8,7 @@
     <UseWPF>true</UseWPF>
     <AssemblyName>SonicRacingSaveManager</AssemblyName>
     <RootNamespace>SonicRacingSaveManager</RootNamespace>
-    <Version>1.1.4</Version>
+    <Version>1.1.6</Version>
     <Authors>An Average Developer</Authors>
     <Product>Sonic Racing CrossWorlds Save Manager</Product>
     <Description>A simple save file manager for Sonic Racing CrossWorlds</Description>
@@ -25,6 +25,10 @@
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="MaterialDesignThemes" Version="5.1.0" />
     <PackageReference Include="MaterialDesignColors" Version="3.1.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Resources\Tickets.png" />
   </ItemGroup>
 
 </Project>

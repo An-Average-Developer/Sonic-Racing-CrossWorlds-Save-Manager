@@ -19,7 +19,11 @@ namespace SonicRacingSaveManager.Features.MemoryEditor.Services
         [DllImport("kernel32.dll")]
         private static extern bool CloseHandle(IntPtr hObject);
 
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool VirtualProtectEx(IntPtr hProcess, IntPtr lpAddress, uint dwSize, uint flNewProtect, out uint lpflOldProtect);
+
         private const int PROCESS_ALL_ACCESS = 0x1F0FFF;
+        private const uint PAGE_EXECUTE_READWRITE = 0x40;
 
         private IntPtr _processHandle = IntPtr.Zero;
         private bool _isAttached;
@@ -230,6 +234,35 @@ namespace SonicRacingSaveManager.Features.MemoryEditor.Services
             }
 
             return "Process running (not attached)";
+        }
+
+        public bool WriteBytes(long address, byte[] bytes)
+        {
+            if (!_isAttached || _processHandle == IntPtr.Zero)
+            {
+                throw new InvalidOperationException("Not attached to process");
+            }
+
+            try
+            {
+                IntPtr targetAddress = new IntPtr(_moduleBase.ToInt64() + address);
+
+                // Change memory protection to writable
+                if (!VirtualProtectEx(_processHandle, targetAddress, (uint)bytes.Length, PAGE_EXECUTE_READWRITE, out uint oldProtect))
+                    return false;
+
+                // Write the bytes
+                bool success = WriteProcessMemory(_processHandle, targetAddress, bytes, bytes.Length, out _);
+
+                // Restore original protection
+                VirtualProtectEx(_processHandle, targetAddress, (uint)bytes.Length, oldProtect, out _);
+
+                return success;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
         }
     }
 }

@@ -641,6 +641,121 @@
                                              Opacity="0.7"
                                              TextWrapping="Wrap"
                                              Margin="0,0,0,10"/>
+
+                                    <!-- Status Section -->
+                                    <Border Background="{DynamicResource MaterialDesignDivider}"
+                                           CornerRadius="8"
+                                           Margin="0,10,0,0">
+                                        <Grid Margin="15">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <Image Grid.Column="0"
+                                                   Source="/Resources/Tickets.png"
+                                                   Width="32"
+                                                   Height="32"
+                                                   VerticalAlignment="Center"
+                                                   Margin="0,0,15,0"
+                                                   RenderOptions.BitmapScalingMode="HighQuality"/>
+
+                                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                <TextBlock Text="Current Status"
+                                                         FontSize="12"
+                                                         Opacity="0.7"/>
+                                                <TextBlock Text="{Binding MemoryEditor.StatusMessage}"
+                                                         FontSize="24"
+                                                         FontWeight="Bold"
+                                                         Margin="0,5,0,0"/>
+                                                <TextBlock Text="Click attach to connect to the game"
+                                                         FontSize="11"
+                                                         Opacity="0.6"
+                                                         Margin="0,5,0,0"
+                                                         FontStyle="Italic"/>
+                                            </StackPanel>
+
+                                            <Button Grid.Column="2"
+                                                  Command="{Binding MemoryEditor.AttachToProcessCommand}"
+                                                  Style="{StaticResource MaterialDesignRaisedButton}"
+                                                  Height="45"
+                                                  VerticalAlignment="Center"
+                                                  Background="#4CAF50">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <materialDesign:PackIcon Kind="Link"
+                                                                           Width="20"
+                                                                           Height="20"
+                                                                           VerticalAlignment="Center"
+                                                                           Margin="0,0,8,0"/>
+                                                    <TextBlock Text="Attach to Game"
+                                                             VerticalAlignment="Center"
+                                                             FontWeight="Medium"/>
+                                                </StackPanel>
+                                            </Button>
+
+                                            <Button Grid.Column="2"
+                                                  Command="{Binding MemoryEditor.DetachFromProcessCommand}"
+                                                  Style="{StaticResource MaterialDesignRaisedButton}"
+                                                  Height="45"
+                                                  VerticalAlignment="Center"
+                                                  Background="#D32F2F"
+                                                  Visibility="{Binding MemoryEditor.IsAttached, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <materialDesign:PackIcon Kind="LinkOff"
+                                                                           Width="20"
+                                                                           Height="20"
+                                                                           VerticalAlignment="Center"
+                                                                           Margin="0,0,8,0"/>
+                                                    <TextBlock Text="Detach"
+                                                             VerticalAlignment="Center"
+                                                             FontWeight="Medium"/>
+                                                </StackPanel>
+                                            </Button>
+                                        </Grid>
+                                    </Border>
+
+                                    <!-- Freeze Tickets Toggle -->
+                                    <Border Background="#4CAF50"
+                                           CornerRadius="8"
+                                           Margin="0,10,0,0"
+                                           Visibility="{Binding MemoryEditor.IsAttached, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                        <Grid Margin="15">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <materialDesign:PackIcon Grid.Column="0"
+                                                                   Kind="Snowflake"
+                                                                   Width="28"
+                                                                   Height="28"
+                                                                   VerticalAlignment="Center"
+                                                                   Margin="0,0,15,0"
+                                                                   Foreground="White"/>
+
+                                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                <TextBlock Text="Freeze Tickets"
+                                                         FontSize="16"
+                                                         FontWeight="Bold"
+                                                         Foreground="White"/>
+                                                <TextBlock Text="Prevent tickets from decreasing (unlimited tickets)"
+                                                         FontSize="11"
+                                                         Foreground="White"
+                                                         Opacity="0.9"
+                                                         Margin="0,3,0,0"/>
+                                            </StackPanel>
+
+                                            <ToggleButton Grid.Column="2"
+                                                         IsChecked="{Binding MemoryEditor.IsTicketsFrozen, Mode=OneWay}"
+                                                         Style="{StaticResource MaterialDesignSwitchToggleButton}"
+                                                         ToolTip="Toggle freeze on/off"
+                                                         Command="{Binding MemoryEditor.ToggleTicketsFreezeCommand}"
+                                                         VerticalAlignment="Center"
+                                                         Margin="10,0,0,0"/>
+                                        </Grid>
+                                    </Border>
                                 </StackPanel>
                             </materialDesign:Card>
 
@@ -650,37 +765,41 @@
                                 <!-- Ticket Editor Card -->
                                 <materialDesign:Card Style="{StaticResource CardStyle}"
                                                    Margin="0"
-                                                   Padding="12,8,12,8"
+                                                   Padding="16,12,16,12"
+                                                   Width="180"
+                                                   MinHeight="170"
                                                    HorizontalAlignment="Left"
                                                    VerticalAlignment="Top"
                                                    Cursor="Hand"
                                                    MouseLeftButtonUp="TicketEditorCard_Click">
                                     <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                                        <materialDesign:PackIcon Kind="Ticket"
-                                                               Width="32"
-                                                               Height="32"
-                                                               HorizontalAlignment="Center"
-                                                               Margin="0,0,0,4"
-                                                               Foreground="{DynamicResource PrimaryHueMidBrush}"/>
+                                        <Image Source="/Resources/Tickets.png"
+                                               Width="48"
+                                               Height="48"
+                                               HorizontalAlignment="Center"
+                                               Margin="0,0,0,8"
+                                               RenderOptions.BitmapScalingMode="HighQuality"/>
 
                                         <TextBlock Text="Ticket Editor"
                                                  FontSize="15"
                                                  FontWeight="SemiBold"
                                                  HorizontalAlignment="Center"
-                                                 Margin="0,0,0,2"/>
+                                                 Margin="0,0,0,4"/>
 
                                         <TextBlock Text="Edit currency"
                                                  FontSize="11"
                                                  Opacity="0.6"
                                                  TextWrapping="Wrap"
                                                  TextAlignment="Center"
-                                                 Margin="4,0,4,4"/>
+                                                 Margin="8,0,8,8"/>
 
                                         <Button Command="{Binding MemoryEditor.SelectTicketEditorCommand}"
                                               Style="{StaticResource MaterialDesignRaisedButton}"
-                                              Height="26"
-                                              Padding="10,0"
-                                              Margin="0,0,0,0">
+                                              Height="28"
+                                              Padding="12,0"
+                                              Margin="0,0,0,0"
+                                              Background="{DynamicResource SecondaryHueMidBrush}"
+                                              Foreground="Black">
                                             <StackPanel Orientation="Horizontal">
                                                 <materialDesign:PackIcon Kind="ChevronRight"
                                                                        Width="14"
@@ -735,81 +854,8 @@
                             </materialDesign:Card>
 
                             <materialDesign:Card Grid.Row="1" Style="{StaticResource CardStyle}" Margin="10">
-                            <StackPanel>
-                                <Border Background="{DynamicResource MaterialDesignDivider}"
-                                       CornerRadius="8"
-                                       Margin="0,0,0,20">
-                                    <Grid Margin="15">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="Auto"/>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                        </Grid.ColumnDefinitions>
-
-                                        <materialDesign:PackIcon Grid.Column="0"
-                                                               Kind="Ticket"
-                                                               Width="32"
-                                                               Height="32"
-                                                               VerticalAlignment="Center"
-                                                               Margin="0,0,15,0"
-                                                               Foreground="{DynamicResource PrimaryHueMidBrush}"/>
-
-                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                            <TextBlock Text="Current Status"
-                                                     FontSize="12"
-                                                     Opacity="0.7"/>
-                                            <TextBlock Text="{Binding MemoryEditor.StatusMessage}"
-                                                     FontSize="24"
-                                                     FontWeight="Bold"
-                                                     Margin="0,5,0,0"/>
-                                            <TextBlock Text="Click attach to connect to the game"
-                                                     FontSize="11"
-                                                     Opacity="0.6"
-                                                     Margin="0,5,0,0"
-                                                     FontStyle="Italic"/>
-                                        </StackPanel>
-
-                                        <Button Grid.Column="2"
-                                              Command="{Binding MemoryEditor.AttachToProcessCommand}"
-                                              Style="{StaticResource MaterialDesignRaisedButton}"
-                                              Height="45"
-                                              VerticalAlignment="Center"
-                                              Background="#4CAF50">
-                                            <StackPanel Orientation="Horizontal">
-                                                <materialDesign:PackIcon Kind="Link"
-                                                                       Width="20"
-                                                                       Height="20"
-                                                                       VerticalAlignment="Center"
-                                                                       Margin="0,0,8,0"/>
-                                                <TextBlock Text="Attach to Game"
-                                                         VerticalAlignment="Center"
-                                                         FontWeight="Medium"/>
-                                            </StackPanel>
-                                        </Button>
-
-                                        <Button Grid.Column="2"
-                                              Command="{Binding MemoryEditor.DetachFromProcessCommand}"
-                                              Style="{StaticResource MaterialDesignRaisedButton}"
-                                              Height="45"
-                                              VerticalAlignment="Center"
-                                              Background="#D32F2F"
-                                              Visibility="{Binding MemoryEditor.IsAttached, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                            <StackPanel Orientation="Horizontal">
-                                                <materialDesign:PackIcon Kind="LinkOff"
-                                                                       Width="20"
-                                                                       Height="20"
-                                                                       VerticalAlignment="Center"
-                                                                       Margin="0,0,8,0"/>
-                                                <TextBlock Text="Detach"
-                                                         VerticalAlignment="Center"
-                                                         FontWeight="Medium"/>
-                                            </StackPanel>
-                                        </Button>
-                                    </Grid>
-                                </Border>
-
                         <!-- Content Area with Left Panel -->
-                        <Grid Margin="0,20,0,0">
+                        <Grid Margin="0,0,0,0">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="2*"/>
                                 <ColumnDefinition Width="3*"/>
@@ -842,35 +888,38 @@
                                            Style="{StaticResource MaterialDesignListBox}">
                                         <ListBox.ItemTemplate>
                                             <DataTemplate>
-                                                <Grid Margin="5">
-                                                    <Grid.RowDefinitions>
-                                                        <RowDefinition Height="Auto"/>
-                                                        <RowDefinition Height="Auto"/>
-                                                    </Grid.RowDefinitions>
-                                                    <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="*"/>
-                                                        <ColumnDefinition Width="Auto"/>
-                                                    </Grid.ColumnDefinitions>
+                                                <StackPanel Orientation="Horizontal"
+                                                           Height="60"
+                                                           Margin="5">
+                                                    <!-- Ticket Image -->
+                                                    <Image Source="/Resources/Tickets.png"
+                                                           Width="60"
+                                                           Height="60"
+                                                           Stretch="Uniform"
+                                                           VerticalAlignment="Center"
+                                                           RenderOptions.BitmapScalingMode="HighQuality"/>
 
-                                                    <TextBlock Grid.Row="0" Grid.Column="0"
-                                                             Text="{Binding Name}"
-                                                             FontWeight="Medium"
-                                                             FontSize="14"/>
-
-                                                    <TextBlock Grid.Row="0" Grid.Column="1"
-                                                             Text="{Binding CurrentValue}"
-                                                             FontWeight="Bold"
-                                                             FontSize="16"
-                                                             Foreground="{DynamicResource PrimaryHueMidBrush}"/>
-
-                                                    <TextBlock Grid.Row="1" Grid.Column="0"
-                                                             Grid.ColumnSpan="2"
-                                                             Text="{Binding Description}"
-                                                             Opacity="0.7"
-                                                             FontSize="11"
-                                                             TextWrapping="Wrap"
-                                                             Margin="0,5,0,0"/>
-                                                </Grid>
+                                                    <!-- Quantity Badge -->
+                                                    <Border Background="#E91E63"
+                                                           CornerRadius="12"
+                                                           Padding="8,4"
+                                                           VerticalAlignment="Center"
+                                                           Margin="10,0,0,0">
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <materialDesign:PackIcon Kind="Counter"
+                                                                                   Width="16"
+                                                                                   Height="16"
+                                                                                   Foreground="White"
+                                                                                   VerticalAlignment="Center"
+                                                                                   Margin="0,0,4,0"/>
+                                                            <TextBlock Text="{Binding CurrentValue}"
+                                                                     FontSize="16"
+                                                                     FontWeight="Bold"
+                                                                     Foreground="White"
+                                                                     VerticalAlignment="Center"/>
+                                                        </StackPanel>
+                                                    </Border>
+                                                </StackPanel>
                                             </DataTemplate>
                                         </ListBox.ItemTemplate>
                                     </ListBox>
@@ -878,7 +927,7 @@
                                     <Button Grid.Row="2"
                                           Command="{Binding MemoryEditor.RefreshValuesCommand}"
                                           Style="{StaticResource MaterialDesignOutlinedButton}"
-                                          Margin="0,0,5,0"
+                                          Margin="0,15,5,0"
                                           Height="40">
                                         <StackPanel Orientation="Horizontal">
                                             <materialDesign:PackIcon Kind="Refresh"
@@ -891,94 +940,57 @@
                             </materialDesign:Card>
 
                             <!-- Right Panel - Editor -->
-                            <materialDesign:Card Grid.Column="1" Style="{StaticResource CardStyle}" Margin="10,-10,0,0">
+                            <materialDesign:Card Grid.Column="1" Style="{StaticResource CardStyle}" Margin="10,0,0,0" VerticalAlignment="Top">
                                 <Grid>
                                     <StackPanel Visibility="{Binding MemoryEditor.SelectedValue, Converter={StaticResource NullToVisibilityConverter}}">
-                                        <!-- Description -->
-                                        <TextBlock Text="Description:"
-                                                 Style="{StaticResource MaterialDesignBody2TextBlock}"
-                                                 Opacity="0.7"
-                                                 Margin="0,0,0,5"/>
-                                        <TextBlock Text="{Binding MemoryEditor.SelectedValue.Description}"
-                                                 Style="{StaticResource MaterialDesignBody1TextBlock}"
-                                                 TextWrapping="Wrap"
-                                                 Margin="0,0,0,20"/>
+                                        <!-- New Value Label -->
+                                        <TextBlock Text="Edit Value"
+                                                 Style="{StaticResource MaterialDesignHeadline6TextBlock}"
+                                                 Margin="0,0,0,15"/>
 
-                                        <!-- Current Value -->
+                                        <!-- Current Value Display -->
                                         <Border Background="{DynamicResource MaterialDesignDivider}"
-                                              CornerRadius="8"
-                                              Padding="15"
-                                              Margin="0,0,0,20">
-                                            <Grid>
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="*"/>
-                                                    <ColumnDefinition Width="Auto"/>
-                                                </Grid.ColumnDefinitions>
-
-                                                <StackPanel Grid.Column="0">
-                                                    <TextBlock Text="Current Value"
-                                                             Style="{StaticResource MaterialDesignCaptionTextBlock}"
-                                                             Opacity="0.7"/>
-                                                    <TextBlock Text="{Binding MemoryEditor.SelectedValue.CurrentValue}"
-                                                             FontSize="32"
-                                                             FontWeight="Bold"
-                                                             Foreground="{DynamicResource PrimaryHueMidBrush}"/>
-                                                </StackPanel>
-
-                                                <materialDesign:PackIcon Grid.Column="1"
-                                                                       Kind="Eye"
-                                                                       Width="48"
-                                                                       Height="48"
-                                                                       Opacity="0.3"
-                                                                       VerticalAlignment="Center"/>
-                                            </Grid>
+                                               CornerRadius="8"
+                                               Padding="12"
+                                               Margin="0,0,0,15">
+                                            <StackPanel>
+                                                <TextBlock Text="Current Value"
+                                                         FontSize="11"
+                                                         Opacity="0.7"
+                                                         Margin="0,0,0,5"/>
+                                                <TextBlock Text="{Binding MemoryEditor.SelectedValue.CurrentValue}"
+                                                         FontSize="20"
+                                                         FontWeight="Bold"
+                                                         Foreground="{DynamicResource PrimaryHueMidBrush}"/>
+                                            </StackPanel>
                                         </Border>
 
                                         <!-- New Value Input -->
+                                        <TextBlock Text="New Value"
+                                                 FontSize="11"
+                                                 Opacity="0.7"
+                                                 Margin="0,0,0,5"/>
                                         <TextBox Text="{Binding MemoryEditor.SelectedValue.NewValue, UpdateSourceTrigger=PropertyChanged}"
-                                               materialDesign:HintAssist.Hint="New Value"
                                                Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                                               FontSize="20"
-                                               Margin="0,0,0,20"/>
+                                               FontSize="16"
+                                               Margin="0,0,0,15"/>
 
                                         <!-- Apply Button -->
                                         <Button Command="{Binding MemoryEditor.ApplyValueCommand}"
                                               Style="{StaticResource MaterialDesignRaisedButton}"
-                                              Height="50">
+                                              Height="40">
                                             <StackPanel Orientation="Horizontal">
                                                 <materialDesign:PackIcon Kind="Check"
-                                                                       Width="24"
-                                                                       Height="24"
+                                                                       Width="20"
+                                                                       Height="20"
                                                                        VerticalAlignment="Center"
-                                                                       Margin="0,0,10,0"/>
+                                                                       Margin="0,0,8,0"/>
                                                 <TextBlock Text="Apply New Value"
                                                          VerticalAlignment="Center"
-                                                         FontSize="16"
+                                                         FontSize="14"
                                                          FontWeight="Medium"/>
                                             </StackPanel>
                                         </Button>
-
-                                        <!-- Warning -->
-                                        <Border Background="#FFF3E0"
-                                              BorderBrush="#FF6B00"
-                                              BorderThickness="2"
-                                              CornerRadius="8"
-                                              Padding="15"
-                                              Margin="0,20,0,0">
-                                            <StackPanel Orientation="Horizontal">
-                                                <materialDesign:PackIcon Kind="Alert"
-                                                                       Width="24"
-                                                                       Height="24"
-                                                                       VerticalAlignment="Center"
-                                                                       Margin="0,0,10,0"
-                                                                       Foreground="#FF6B00"/>
-                                                <TextBlock Text="Changes are applied immediately to the game's memory"
-                                                         TextWrapping="Wrap"
-                                                         VerticalAlignment="Center"
-                                                         Foreground="#FF6B00"
-                                                         FontWeight="Medium"/>
-                                            </StackPanel>
-                                        </Border>
                                     </StackPanel>
 
                                     <!-- No Selection Placeholder -->
@@ -1004,7 +1016,6 @@
                                 </Grid>
                             </materialDesign:Card>
                         </Grid>
-                            </StackPanel>
                         </materialDesign:Card>
                         </Grid>
                     </Grid>
