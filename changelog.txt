@@ -1,2 +1,3 @@
-1.1.5
-- Fixed mod folder not found
+1.1.6
+- Added a Freeze Tickets Option
+- Fixed Tickets editor to work with the update 1.2.0
