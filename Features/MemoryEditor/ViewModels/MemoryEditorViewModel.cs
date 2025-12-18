@@ -27,7 +27,7 @@ namespace SonicRacingSaveManager.Features.MemoryEditor.ViewModels
         private bool _isTicketsFrozen = false;
 
         // Freeze configuration for tickets
-        private const long TICKET_FREEZE_ADDRESS = 0x4D49E2D;
+        private const long TICKET_FREEZE_ADDRESS = 0x4D48DCD;
         private static readonly byte[] FREEZE_BYTES = new byte[] { 0x90, 0x90, 0x90 }; // NOP instructions
         private static readonly byte[] ORIGINAL_BYTES = new byte[] { 0x89, 0x5E, 0x58 }; // mov [rsi+58],ebx
 
@@ -49,8 +49,8 @@ namespace SonicRacingSaveManager.Features.MemoryEditor.ViewModels
                 {
                     Name = "Tickets",
                     Description = "In-game currency for purchases",
-                    BaseAddress = 0x086A17E0,
-                    Offsets = new int[] { 0x6B0, 0x28, 0x8, 0x2D8, 0xD8, 0x58 },
+                    BaseAddress = 0x086CF928,
+                    Offsets = new int[] { 0xD8, 0x70, 0x108, 0x2D8, 0xD8, 0x58 },
                     CurrentValue = 0,
                     NewValue = 0
                 }
