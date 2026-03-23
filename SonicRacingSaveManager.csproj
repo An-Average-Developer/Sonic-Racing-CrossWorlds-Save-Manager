@@ -8,16 +8,16 @@
     <UseWPF>true</UseWPF>
     <AssemblyName>SonicRacingSaveManager</AssemblyName>
     <RootNamespace>SonicRacingSaveManager</RootNamespace>
-    <Version>1.1.7</Version>
+    <Version>1.2.0</Version>
     <Authors>An Average Developer</Authors>
     <Product>Sonic Racing CrossWorlds Save Manager</Product>
     <Description>A simple save file manager for Sonic Racing CrossWorlds</Description>
 
     <!-- Self-contained and single file for portability -->
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <SelfContained>true</SelfContained>
     <PublishSingleFile>true</PublishSingleFile>
-    <PublishReadyToRun>true</PublishReadyToRun>
-    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+<IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
     <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
   </PropertyGroup>
 
