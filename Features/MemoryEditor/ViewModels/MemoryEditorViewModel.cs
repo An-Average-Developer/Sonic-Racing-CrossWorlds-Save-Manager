@@ -27,7 +27,7 @@ namespace SonicRacingSaveManager.Features.MemoryEditor.ViewModels
         private bool _isTicketsFrozen = false;
 
         // Freeze configuration for tickets
-        private const long TICKET_FREEZE_ADDRESS = 0x4D42B7D;
+        private const long TICKET_FREEZE_ADDRESS = 0x4D42A7D;
         private static readonly byte[] FREEZE_BYTES = new byte[] { 0x90, 0x90, 0x90 }; // NOP instructions
         private static readonly byte[] ORIGINAL_BYTES = new byte[] { 0x89, 0x5E, 0x58 }; // mov [rsi+58],ebx
 
