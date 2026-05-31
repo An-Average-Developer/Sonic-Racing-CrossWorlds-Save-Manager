@@ -756,6 +756,90 @@
                                                          Margin="10,0,0,0"/>
                                         </Grid>
                                     </Border>
+
+                                    <!-- Multiply Tickets Toggle -->
+                                    <Border Background="#FF9800"
+                                           CornerRadius="8"
+                                           Margin="0,10,0,0"
+                                           Visibility="{Binding MemoryEditor.IsAttached, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                        <Grid Margin="15">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <materialDesign:PackIcon Grid.Column="0"
+                                                                   Kind="TrendingUp"
+                                                                   Width="28"
+                                                                   Height="28"
+                                                                   VerticalAlignment="Center"
+                                                                   Margin="0,0,15,0"
+                                                                   Foreground="White"/>
+
+                                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                <TextBlock Text="Multiply Tickets"
+                                                         FontSize="16"
+                                                         FontWeight="Bold"
+                                                         Foreground="White"/>
+                                                <TextBlock Text="Spending tickets gains tickets instead of losing them"
+                                                         FontSize="11"
+                                                         Foreground="White"
+                                                         Opacity="0.9"
+                                                         Margin="0,3,0,0"/>
+                                            </StackPanel>
+
+                                            <ToggleButton Grid.Column="2"
+                                                         IsChecked="{Binding MemoryEditor.IsTicketsMultiplied, Mode=OneWay}"
+                                                         Style="{StaticResource MaterialDesignSwitchToggleButton}"
+                                                         ToolTip="Toggle multiply on/off"
+                                                         Command="{Binding MemoryEditor.ToggleTicketsMultiplyCommand}"
+                                                         VerticalAlignment="Center"
+                                                         Margin="10,0,0,0"/>
+                                        </Grid>
+                                    </Border>
+
+                                    <!-- Multiply Tickets x500 Toggle -->
+                                    <Border Background="#7B1FA2"
+                                           CornerRadius="8"
+                                           Margin="0,10,0,0"
+                                           Visibility="{Binding MemoryEditor.IsAttached, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                        <Grid Margin="15">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <materialDesign:PackIcon Grid.Column="0"
+                                                                   Kind="Rocket"
+                                                                   Width="28"
+                                                                   Height="28"
+                                                                   VerticalAlignment="Center"
+                                                                   Margin="0,0,15,0"
+                                                                   Foreground="White"/>
+
+                                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                <TextBlock Text="Multiply Tickets x500"
+                                                         FontSize="16"
+                                                         FontWeight="Bold"
+                                                         Foreground="White"/>
+                                                <TextBlock Text="Each purchase gains 500× the ticket cost"
+                                                         FontSize="11"
+                                                         Foreground="White"
+                                                         Opacity="0.9"
+                                                         Margin="0,3,0,0"/>
+                                            </StackPanel>
+
+                                            <ToggleButton Grid.Column="2"
+                                                         IsChecked="{Binding MemoryEditor.IsTicketsMultiply500, Mode=OneWay}"
+                                                         Style="{StaticResource MaterialDesignSwitchToggleButton}"
+                                                         ToolTip="Toggle x500 on/off"
+                                                         Command="{Binding MemoryEditor.ToggleTicketsMultiply500Command}"
+                                                         VerticalAlignment="Center"
+                                                         Margin="10,0,0,0"/>
+                                        </Grid>
+                                    </Border>
                                 </StackPanel>
                             </materialDesign:Card>
 

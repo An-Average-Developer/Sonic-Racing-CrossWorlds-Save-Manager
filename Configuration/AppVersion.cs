@@ -2,7 +2,7 @@ namespace SonicRacingSaveManager.Configuration
 {
     public static class AppVersion
     {
-        public const string CURRENT_VERSION = "1.2.1";
+        public const string CURRENT_VERSION = "1.2.2";
 
         public const string GITHUB_OWNER = "An-Average-Developer";
         public const string GITHUB_REPO = "Sonic-Racing-CrossWorlds-Save-Manager";

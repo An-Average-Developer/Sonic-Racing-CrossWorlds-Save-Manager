@@ -25,11 +25,40 @@ namespace SonicRacingSaveManager.Features.MemoryEditor.ViewModels
         private int _lastKnownGoodTicketValue = 0;
         private string _selectedTool = "menu";
         private bool _isTicketsFrozen = false;
+        private bool _isTicketsMultiplied = false;
+        private bool _isTicketsMultiply500 = false;
 
         // Freeze configuration for tickets
         private const long TICKET_FREEZE_ADDRESS = 0x4D42A7D;
         private static readonly byte[] FREEZE_BYTES = new byte[] { 0x90, 0x90, 0x90 }; // NOP instructions
         private static readonly byte[] ORIGINAL_BYTES = new byte[] { 0x89, 0x5E, 0x58 }; // mov [rsi+58],ebx
+
+        // Multiply configuration for tickets (flips sub→add so spending gains tickets)
+        private const long TICKET_MULTIPLY_ADDRESS = 0x4D42A6B;
+        private static readonly byte[] MULTIPLY_BYTES = new byte[] { 0x41, 0x03, 0xC6 }; // add eax,r14d
+        private static readonly byte[] MULTIPLY_ORIGINAL_BYTES = new byte[] { 0x41, 0x2B, 0xC6 }; // sub eax,r14d
+
+        // Multiply x500 configuration - code cave in INT3 padding at 4D42A91
+        // Patches 5 bytes at 4D42A6B (sub+cmp) with JMP to cave, cave computes eax += r14d*500
+        private const long TICKET_MULTIPLY500_PATCH_ADDRESS = 0x4D42A6B;
+        private static readonly byte[] MULTIPLY500_PATCH_BYTES = new byte[] { 0xE9, 0x21, 0x00, 0x00, 0x00 }; // JMP to cave at 4D42A91
+        private static readonly byte[] MULTIPLY500_PATCH_ORIGINAL = new byte[] { 0x41, 0x2B, 0xC6, 0x3B, 0xC7 }; // sub eax,r14d; cmp eax,edi
+        private const long TICKET_MULTIPLY500_CAVE_ADDRESS = 0x4D42A91;
+        private static readonly byte[] MULTIPLY500_CAVE_BYTES = new byte[]
+        {
+            0x52,                                           // push rdx
+            0x41, 0x69, 0xD6, 0xF4, 0x01, 0x00, 0x00,     // imul edx,r14d,500
+            0x01, 0xD0,                                     // add eax,edx
+            0x5A,                                           // pop rdx
+            0x3B, 0xC7,                                     // cmp eax,edi  (restored)
+            0xEB, 0xD0                                      // jmp short -0x30 → back to 4D42A70
+        };
+        private static readonly byte[] MULTIPLY500_CAVE_ORIGINAL = new byte[]
+        {
+            0xCC, 0xCC, 0xCC, 0xCC, 0xCC,
+            0xCC, 0xCC, 0xCC, 0xCC, 0xCC,
+            0xCC, 0xCC, 0xCC, 0xCC, 0xCC
+        };
 
         public MemoryEditorViewModel()
         {
@@ -42,6 +71,8 @@ namespace SonicRacingSaveManager.Features.MemoryEditor.ViewModels
             SelectTicketEditorCommand = new RelayCommand(() => SelectedTool = "tickets");
             BackToMenuCommand = new RelayCommand(() => SelectedTool = "menu");
             ToggleTicketsFreezeCommand = new RelayCommand(ToggleTicketsFreeze, CanToggleTicketsFreeze);
+            ToggleTicketsMultiplyCommand = new RelayCommand(ToggleTicketsMultiply, CanToggleTicketsMultiply);
+            ToggleTicketsMultiply500Command = new RelayCommand(ToggleTicketsMultiply500, CanToggleTicketsMultiply500);
 
             MemoryValues = new ObservableCollection<MemoryValue>
             {
@@ -148,6 +179,26 @@ namespace SonicRacingSaveManager.Features.MemoryEditor.ViewModels
             }
         }
 
+        public bool IsTicketsMultiplied
+        {
+            get => _isTicketsMultiplied;
+            set
+            {
+                _isTicketsMultiplied = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public bool IsTicketsMultiply500
+        {
+            get => _isTicketsMultiply500;
+            set
+            {
+                _isTicketsMultiply500 = value;
+                OnPropertyChanged();
+            }
+        }
+
         public ICommand AttachToProcessCommand { get; }
         public ICommand DetachFromProcessCommand { get; }
         public ICommand RefreshValuesCommand { get; }
@@ -155,6 +206,8 @@ namespace SonicRacingSaveManager.Features.MemoryEditor.ViewModels
         public ICommand SelectTicketEditorCommand { get; }
         public ICommand BackToMenuCommand { get; }
         public ICommand ToggleTicketsFreezeCommand { get; }
+        public ICommand ToggleTicketsMultiplyCommand { get; }
+        public ICommand ToggleTicketsMultiply500Command { get; }
 
         private bool CanAttachToProcess(object? parameter)
         {
@@ -208,7 +261,20 @@ namespace SonicRacingSaveManager.Features.MemoryEditor.ViewModels
                     _memoryService.WriteBytes(TICKET_FREEZE_ADDRESS, ORIGINAL_BYTES);
                 }
 
+                if (IsTicketsMultiplied)
+                {
+                    _memoryService.WriteBytes(TICKET_MULTIPLY_ADDRESS, MULTIPLY_ORIGINAL_BYTES);
+                }
+
+                if (IsTicketsMultiply500)
+                {
+                    _memoryService.WriteBytes(TICKET_MULTIPLY500_PATCH_ADDRESS, MULTIPLY500_PATCH_ORIGINAL);
+                    _memoryService.WriteBytes(TICKET_MULTIPLY500_CAVE_ADDRESS, MULTIPLY500_CAVE_ORIGINAL);
+                }
+
                 IsTicketsFrozen = false;
+                IsTicketsMultiplied = false;
+                IsTicketsMultiply500 = false;
                 _memoryService.DetachFromProcess();
                 IsAttached = false;
                 _lastKnownGoodTicketValue = 0;
@@ -343,6 +409,8 @@ namespace SonicRacingSaveManager.Features.MemoryEditor.ViewModels
                 {
                     _updateTimer.Stop();
                     IsTicketsFrozen = false;
+                    IsTicketsMultiplied = false;
+                    IsTicketsMultiply500 = false;
                     _memoryService.DetachFromProcess();
                     IsAttached = false;
                     _lastKnownGoodTicketValue = 0;
@@ -456,6 +524,140 @@ namespace SonicRacingSaveManager.Features.MemoryEditor.ViewModels
             }
 
             ((RelayCommand)ToggleTicketsFreezeCommand).RaiseCanExecuteChanged();
+        }
+
+        private bool CanToggleTicketsMultiply(object? parameter)
+        {
+            return IsAttached;
+        }
+
+        private void ToggleTicketsMultiply(object? parameter)
+        {
+            if (!IsAttached)
+                return;
+
+            try
+            {
+                bool success;
+                if (!IsTicketsMultiplied)
+                {
+                    success = _memoryService.WriteBytes(TICKET_MULTIPLY_ADDRESS, MULTIPLY_BYTES);
+                    if (success)
+                    {
+                        IsTicketsMultiplied = true;
+                        StatusMessage = "Ticket multiply enabled - spending now gains tickets!";
+                    }
+                    else
+                    {
+                        StatusMessage = "Failed to enable ticket multiply";
+                        MessageBox.Show(
+                            "Failed to enable ticket multiply. Make sure the game is running and you are attached to the process.",
+                            "Multiply Failed",
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Error);
+                    }
+                }
+                else
+                {
+                    success = _memoryService.WriteBytes(TICKET_MULTIPLY_ADDRESS, MULTIPLY_ORIGINAL_BYTES);
+                    if (success)
+                    {
+                        IsTicketsMultiplied = false;
+                        StatusMessage = "Ticket multiply disabled";
+                    }
+                    else
+                    {
+                        StatusMessage = "Failed to disable ticket multiply";
+                        MessageBox.Show(
+                            "Failed to disable ticket multiply.",
+                            "Disable Failed",
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Error);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Error toggling multiply: {ex.Message}";
+                MessageBox.Show(
+                    $"Error occurred while toggling multiply:\n\n{ex.Message}",
+                    "Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+            }
+
+            ((RelayCommand)ToggleTicketsMultiplyCommand).RaiseCanExecuteChanged();
+        }
+
+        private bool CanToggleTicketsMultiply500(object? parameter)
+        {
+            return IsAttached;
+        }
+
+        private void ToggleTicketsMultiply500(object? parameter)
+        {
+            if (!IsAttached)
+                return;
+
+            try
+            {
+                bool success;
+                if (!IsTicketsMultiply500)
+                {
+                    // Write cave first, then JMP patch (safest order)
+                    success = _memoryService.WriteBytes(TICKET_MULTIPLY500_CAVE_ADDRESS, MULTIPLY500_CAVE_BYTES);
+                    if (success)
+                        success = _memoryService.WriteBytes(TICKET_MULTIPLY500_PATCH_ADDRESS, MULTIPLY500_PATCH_BYTES);
+
+                    if (success)
+                    {
+                        IsTicketsMultiply500 = true;
+                        StatusMessage = "Tickets x500 enabled - each purchase gains 500× the ticket cost!";
+                    }
+                    else
+                    {
+                        _memoryService.WriteBytes(TICKET_MULTIPLY500_CAVE_ADDRESS, MULTIPLY500_CAVE_ORIGINAL);
+                        StatusMessage = "Failed to enable tickets x500";
+                        MessageBox.Show(
+                            "Failed to enable tickets x500. Make sure the game is running and you are attached to the process.",
+                            "x500 Failed",
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Error);
+                    }
+                }
+                else
+                {
+                    // Restore patch first so game stops jumping to cave, then wipe cave
+                    success = _memoryService.WriteBytes(TICKET_MULTIPLY500_PATCH_ADDRESS, MULTIPLY500_PATCH_ORIGINAL);
+                    _memoryService.WriteBytes(TICKET_MULTIPLY500_CAVE_ADDRESS, MULTIPLY500_CAVE_ORIGINAL);
+
+                    if (success)
+                    {
+                        IsTicketsMultiply500 = false;
+                        StatusMessage = "Tickets x500 disabled";
+                    }
+                    else
+                    {
+                        StatusMessage = "Failed to disable tickets x500";
+                        MessageBox.Show(
+                            "Failed to disable tickets x500.",
+                            "Disable Failed",
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Error);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Error toggling x500: {ex.Message}";
+                MessageBox.Show(
+                    $"Error occurred while toggling x500:\n\n{ex.Message}",
+                    "Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+            }
+
+            ((RelayCommand)ToggleTicketsMultiply500Command).RaiseCanExecuteChanged();
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;
