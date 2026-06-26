@@ -1,3 +1,2 @@
-1.2.2
-- Added a method to duplicate tickets instead of wasting
-- Added a method that makes each purchase grant 500× the ticket cost
+1.2.3
+- The tool has been updated to work with the version 1.4.1

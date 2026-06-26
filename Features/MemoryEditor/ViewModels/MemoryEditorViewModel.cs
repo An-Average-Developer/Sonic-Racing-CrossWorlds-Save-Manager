@@ -29,29 +29,28 @@ namespace SonicRacingSaveManager.Features.MemoryEditor.ViewModels
         private bool _isTicketsMultiply500 = false;
 
         // Freeze configuration for tickets
-        private const long TICKET_FREEZE_ADDRESS = 0x4D42A7D;
+        private const long TICKET_FREEZE_ADDRESS = 0x4D83DBD;
         private static readonly byte[] FREEZE_BYTES = new byte[] { 0x90, 0x90, 0x90 }; // NOP instructions
         private static readonly byte[] ORIGINAL_BYTES = new byte[] { 0x89, 0x5E, 0x58 }; // mov [rsi+58],ebx
 
         // Multiply configuration for tickets (flips sub→add so spending gains tickets)
-        private const long TICKET_MULTIPLY_ADDRESS = 0x4D42A6B;
+        private const long TICKET_MULTIPLY_ADDRESS = 0x4D83DAB; //6 time up of the freeze bytes
         private static readonly byte[] MULTIPLY_BYTES = new byte[] { 0x41, 0x03, 0xC6 }; // add eax,r14d
         private static readonly byte[] MULTIPLY_ORIGINAL_BYTES = new byte[] { 0x41, 0x2B, 0xC6 }; // sub eax,r14d
 
-        // Multiply x500 configuration - code cave in INT3 padding at 4D42A91
-        // Patches 5 bytes at 4D42A6B (sub+cmp) with JMP to cave, cave computes eax += r14d*500
-        private const long TICKET_MULTIPLY500_PATCH_ADDRESS = 0x4D42A6B;
-        private static readonly byte[] MULTIPLY500_PATCH_BYTES = new byte[] { 0xE9, 0x21, 0x00, 0x00, 0x00 }; // JMP to cave at 4D42A91
+        // Multiply x500 configuration - code cave in INT3 padding at 4D83DD1
+        // Patches 5 bytes at 4D83DAB (sub+cmp) with JMP to cave, cave computes eax += r14d*500
+        private const long TICKET_MULTIPLY500_PATCH_ADDRESS = 0x4D83DAB;
+        private static readonly byte[] MULTIPLY500_PATCH_BYTES = new byte[] { 0xE9, 0x21, 0x00, 0x00, 0x00 }; // JMP to cave at 4D83DD1
         private static readonly byte[] MULTIPLY500_PATCH_ORIGINAL = new byte[] { 0x41, 0x2B, 0xC6, 0x3B, 0xC7 }; // sub eax,r14d; cmp eax,edi
-        private const long TICKET_MULTIPLY500_CAVE_ADDRESS = 0x4D42A91;
+        private const long TICKET_MULTIPLY500_CAVE_ADDRESS = 0x4D83DD1; // 6 lines below the freeze bytes
         private static readonly byte[] MULTIPLY500_CAVE_BYTES = new byte[]
         {
-            0x52,                                           // push rdx
-            0x41, 0x69, 0xD6, 0xF4, 0x01, 0x00, 0x00,     // imul edx,r14d,500
-            0x01, 0xD0,                                     // add eax,edx
-            0x5A,                                           // pop rdx
+            0x45, 0x69, 0xF6, 0xF4, 0x01, 0x00, 0x00,       // imul r14d,r14d,500
+            0x41, 0x03, 0xC6,                               // add eax,r14d
             0x3B, 0xC7,                                     // cmp eax,edi  (restored)
-            0xEB, 0xD0                                      // jmp short -0x30 → back to 4D42A70
+            0x90,                                           // nop
+            0xEB, 0xD0                                      // jmp short -0x30 → back to 4D83DB0
         };
         private static readonly byte[] MULTIPLY500_CAVE_ORIGINAL = new byte[]
         {
@@ -80,8 +79,8 @@ namespace SonicRacingSaveManager.Features.MemoryEditor.ViewModels
                 {
                     Name = "Tickets",
                     Description = "In-game currency for purchases",
-                    BaseAddress = 0x08223140,
-                    Offsets = new int[] { 0x60, 0x28, 0x8, 0x2D8, 0xD8, 0x58 },
+                    BaseAddress = 0x151058DC,
+                    Offsets = new int[] { 0x60, 0x10, 0x1D8, 0x108, 0x2D8, 0xD8, 0x58 },
                     CurrentValue = 0,
                     NewValue = 0
                 }

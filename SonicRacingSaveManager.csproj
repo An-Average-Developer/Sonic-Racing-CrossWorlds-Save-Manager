@@ -8,17 +8,22 @@
     <UseWPF>true</UseWPF>
     <AssemblyName>SonicRacingSaveManager</AssemblyName>
     <RootNamespace>SonicRacingSaveManager</RootNamespace>
-    <Version>1.2.2</Version>
+    <Version>1.2.3</Version>
     <Authors>An Average Developer</Authors>
     <Product>Sonic Racing CrossWorlds Save Manager</Product>
     <Description>A simple save file manager for Sonic Racing CrossWorlds</Description>
+  </PropertyGroup>
 
-    <!-- Self-contained and single file for portability -->
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <SelfContained>true</SelfContained>
     <PublishSingleFile>true</PublishSingleFile>
-<IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <PublishReadyToRun>true</PublishReadyToRun>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
     <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+    <Deterministic>true</Deterministic>
+    <PathMap>$(MSBuildProjectDirectory)=.</PathMap>
+    <DebugType>none</DebugType>
   </PropertyGroup>
 
   <ItemGroup>
