@@ -1,0 +1,175 @@
+<UserControl x:Class="SonicRacingSaveManager.Features.Reports.Views.ReportsTabControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <materialDesign:Card Grid.Row="0" Style="{StaticResource CardStyle}">
+            <StackPanel Orientation="Horizontal">
+                <materialDesign:PackIcon Kind="Bug"
+                                       Width="32" Height="32"
+                                       VerticalAlignment="Center"
+                                       Margin="0,0,12,0"
+                                       Foreground="{DynamicResource PrimaryHueMidBrush}"/>
+                <StackPanel>
+                    <TextBlock Text="Report a Bug"
+                             Style="{StaticResource MaterialDesignHeadline6TextBlock}"/>
+                    <TextBlock Text="Found something broken? Let us know and we'll take a look."
+                             Style="{StaticResource MaterialDesignBody2TextBlock}"
+                             Opacity="0.7"
+                             TextWrapping="Wrap"
+                             Margin="0,4,0,0"/>
+                </StackPanel>
+            </StackPanel>
+        </materialDesign:Card>
+
+        <materialDesign:Card Grid.Row="1" Style="{StaticResource CardStyle}" Margin="0,10,0,0">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel Margin="10,10,10,16" MaxWidth="640">
+
+                    <!-- Discord identity -->
+                    <TextBlock Text="DISCORD IDENTITY"
+                             FontSize="11" FontWeight="Bold" Opacity="0.6"
+                             Margin="0,0,0,4"/>
+                    <TextBlock Text="We ask you to sign in with Discord so we know who sent each report, can follow up if we need more details, and can credit you when your report leads to a fix."
+                             FontSize="11" Opacity="0.6"
+                             TextWrapping="Wrap"
+                             Margin="0,0,0,10"/>
+
+                    <!-- Connect row -->
+                    <StackPanel x:Name="DiscordConnectRow"
+                                Orientation="Horizontal"
+                                Margin="0,0,0,18">
+                        <Button x:Name="DiscordConnectBtn"
+                              Style="{StaticResource MaterialDesignOutlinedButton}"
+                              Height="36"
+                              Click="DiscordConnectBtn_Click">
+                            <StackPanel Orientation="Horizontal">
+                                <Image Source="pack://application:,,,/Resources/Logos/Discord.png"
+                                      Stretch="Uniform"
+                                      Width="18" Height="18"
+                                      Margin="0,0,8,0"/>
+                                <TextBlock Text="Connect with Discord" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                        <Button x:Name="DiscordInfoBtn"
+                              Width="36" Height="36"
+                              Margin="8,0,0,0"
+                              VerticalAlignment="Center"
+                              Style="{StaticResource MaterialDesignIconButton}"
+                              ToolTip="Why do I need to connect with Discord?"
+                              Click="DiscordInfoBtn_Click">
+                            <materialDesign:PackIcon Kind="InformationOutline" Width="22" Height="22"/>
+                        </Button>
+                    </StackPanel>
+
+                    <!-- Waiting for browser authorization -->
+                    <StackPanel x:Name="DiscordWaitingRow"
+                                Orientation="Horizontal"
+                                Visibility="Collapsed"
+                                Margin="0,0,0,18">
+                        <TextBlock Text="Waiting for browser authorization..."
+                                 VerticalAlignment="Center"
+                                 Opacity="0.7"/>
+                        <Button x:Name="DiscordCancelAuthBtn"
+                              Content="Cancel"
+                              Style="{StaticResource MaterialDesignFlatButton}"
+                              Height="28"
+                              Margin="10,0,0,0"
+                              Click="DiscordCancelAuthBtn_Click"/>
+                    </StackPanel>
+
+                    <!-- Connected state -->
+                    <Border x:Name="DiscordConnectedPanel"
+                            Visibility="Collapsed"
+                            Background="{DynamicResource MaterialDesignDivider}"
+                            CornerRadius="6"
+                            Padding="12,8"
+                            Margin="0,0,0,18">
+                        <Grid>
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <materialDesign:PackIcon Kind="CheckDecagram"
+                                                       Width="20" Height="20"
+                                                       Foreground="#00C853"
+                                                       VerticalAlignment="Center"
+                                                       Margin="0,0,8,0"/>
+                                <TextBlock x:Name="DiscordUsernameText"
+                                         FontWeight="SemiBold"
+                                         VerticalAlignment="Center"/>
+                            </StackPanel>
+                            <Button x:Name="DiscordDisconnectBtn"
+                                  Content="✕"
+                                  Style="{StaticResource MaterialDesignFlatButton}"
+                                  Width="30" Height="30"
+                                  Padding="0"
+                                  HorizontalAlignment="Right"
+                                  Click="DiscordDisconnectBtn_Click"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- Title -->
+                    <TextBlock Text="Title" Opacity="0.7" FontSize="12" Margin="0,0,0,4"/>
+                    <TextBox x:Name="BugTitleBox"
+                           Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                           materialDesign:HintAssist.Hint="Brief summary of the issue..."
+                           Margin="0,0,0,14"/>
+
+                    <!-- Description -->
+                    <TextBlock Text="Description" Opacity="0.7" FontSize="12" Margin="0,0,0,4"/>
+                    <TextBox x:Name="BugDescBox"
+                           Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                           materialDesign:HintAssist.Hint="What happened? What did you expect to happen? Steps to reproduce..."
+                           AcceptsReturn="True"
+                           TextWrapping="Wrap"
+                           VerticalScrollBarVisibility="Auto"
+                           Height="120"
+                           Margin="0,0,0,14"/>
+
+                    <!-- Screenshot -->
+                    <TextBlock Text="Screenshot (optional)" Opacity="0.7" FontSize="12" Margin="0,0,0,6"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,18">
+                        <Button x:Name="BugImageBtn"
+                              Style="{StaticResource MaterialDesignOutlinedButton}"
+                              Height="34"
+                              Click="BugImageBtn_Click">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="ImagePlus" Width="18" Height="18" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <TextBlock Text="Attach Image" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                        <TextBlock x:Name="BugImageFileName"
+                                 Text="No file selected"
+                                 Opacity="0.6"
+                                 VerticalAlignment="Center"
+                                 Margin="12,0,0,0"
+                                 TextTrimming="CharacterEllipsis"
+                                 MaxWidth="320"/>
+                    </StackPanel>
+
+                    <!-- Status -->
+                    <TextBlock x:Name="BugStatusText"
+                             TextWrapping="Wrap"
+                             Margin="0,0,0,14"
+                             Visibility="Collapsed"/>
+
+                    <!-- Send -->
+                    <Button x:Name="SendBugReportBtn"
+                          Style="{StaticResource MaterialDesignRaisedButton}"
+                          HorizontalAlignment="Left"
+                          Height="40"
+                          Click="SendBugReportBtn_Click">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="Send" Width="18" Height="18" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <TextBlock x:Name="SendBugReportBtnText" Text="Send Report" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+
+                </StackPanel>
+            </ScrollViewer>
+        </materialDesign:Card>
+    </Grid>
+</UserControl>

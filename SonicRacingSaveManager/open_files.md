@@ -1,0 +1,6 @@
+- [Features/MemoryEditor/ViewModels/MemoryEditorViewModel.cs](Features/MemoryEditor/ViewModels/MemoryEditorViewModel.cs),
+- [Configuration/AppVersion.cs](Configuration/AppVersion.cs),
+- [SonicRacingSaveManager.csproj](SonicRacingSaveManager.csproj),
+- [Common/Services/DiscordPresenceService.cs](Common/Services/DiscordPresenceService.cs),
+- [Common/Services/DiscordOAuthService.cs](Common/Services/DiscordOAuthService.cs),
+- [Features/Reports/Views/ReportsTabControl.xaml.cs](Features/Reports/Views/ReportsTabControl.xaml.cs)
