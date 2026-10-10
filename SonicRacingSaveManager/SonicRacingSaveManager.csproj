@@ -4,12 +4,20 @@
     <OutputType>WinExe</OutputType>
     <TargetFramework>net9.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
+    <!-- Seasonal mode: set ONE of these to true before building. It picks the default
+         season theme (AppVersion.BuildDefaultTheme). All false = classic. -->
+    <SummerMode>false</SummerMode>
+    <HalloweenMode>true</HalloweenMode>
+    <ChristmasMode>false</ChristmasMode>
+    <DefineConstants Condition="'$(SummerMode)' == 'true'">$(DefineConstants);SUMMER_MODE</DefineConstants>
+    <DefineConstants Condition="'$(HalloweenMode)' == 'true'">$(DefineConstants);HALLOWEEN_MODE</DefineConstants>
+    <DefineConstants Condition="'$(ChristmasMode)' == 'true'">$(DefineConstants);CHRISTMAS_MODE</DefineConstants>
     <ApplicationIcon>icon.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <UseWPF>true</UseWPF>
     <AssemblyName>SonicRacingSaveManager</AssemblyName>
     <RootNamespace>SonicRacingSaveManager</RootNamespace>
-    <Version>2.0.0</Version>
+    <Version>2.1.0</Version>
     <Authors>An Average Developer</Authors>
     <Product>Sonic Racing CrossWorlds Save Manager</Product>
     <Description>A simple save file manager for Sonic Racing CrossWorlds</Description>

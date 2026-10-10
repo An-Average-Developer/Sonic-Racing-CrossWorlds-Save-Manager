@@ -23,8 +23,31 @@ namespace SonicRacingSaveManager.Features.MemoryEditor.Services
         [DllImport("kernel32.dll", SetLastError = true)]
         private static extern bool VirtualProtectEx(IntPtr hProcess, IntPtr lpAddress, uint dwSize, uint flNewProtect, out uint lpflOldProtect);
 
+        [DllImport("kernel32.dll")]
+        private static extern IntPtr VirtualQueryEx(IntPtr hProcess, IntPtr lpAddress, out MEMORY_BASIC_INFORMATION lpBuffer, uint dwLength);
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct MEMORY_BASIC_INFORMATION
+        {
+            public IntPtr BaseAddress;
+            public IntPtr AllocationBase;
+            public uint AllocationProtect;
+            public IntPtr RegionSize;
+            public uint State;
+            public uint Protect;
+            public uint Type;
+        }
+
         private const int PROCESS_ALL_ACCESS = 0x1F0FFF;
         private const uint PAGE_EXECUTE_READWRITE = 0x40;
+        private const uint MEM_COMMIT = 0x1000;
+        private const uint MEM_PRIVATE = 0x20000;
+        private const uint PAGE_NOACCESS = 0x01;
+        private const uint PAGE_READWRITE = 0x04;
+        private const uint PAGE_WRITECOPY = 0x08;
+        private const uint PAGE_EXECUTE_WRITECOPY = 0x80;
+        private const uint PAGE_GUARD = 0x100;
+        private const int ScanChunkSize = 16 * 1024 * 1024;
 
         private const string DefaultProcessName = "SonicRacingCrossWorldsSteam";
 
@@ -152,132 +175,103 @@ namespace SonicRacingSaveManager.Features.MemoryEditor.Services
             _targetProcess = null;
         }
 
-        public int ReadValue(long baseOffset, int[] offsets)
+        public int ReadInt32(long address)
         {
             if (!_isAttached || _processHandle == IntPtr.Zero)
             {
                 throw new InvalidOperationException("Not attached to process");
             }
 
-            try
-            {
-                IntPtr address = ResolvePointerChain(baseOffset, offsets);
+            byte[] buffer = new byte[4];
+            return ReadProcessMemory(_processHandle, new IntPtr(address), buffer, buffer.Length, out int read) && read == 4
+                ? BitConverter.ToInt32(buffer, 0)
+                : 0;
+        }
 
-                byte[] buffer = new byte[4];
-                if (ReadProcessMemory(_processHandle, address, buffer, buffer.Length, out _))
+        public bool WriteInt32(long address, int value)
+        {
+            if (!_isAttached || _processHandle == IntPtr.Zero)
+            {
+                throw new InvalidOperationException("Not attached to process");
+            }
+
+            byte[] buffer = BitConverter.GetBytes(value);
+            return WriteProcessMemory(_processHandle, new IntPtr(address), buffer, buffer.Length, out _);
+        }
+
+        // Cheat Engine style "first scan": every 4-byte aligned int32 equal to value in the
+        // game's private read/write memory (the heap, where the tickets live).
+        public List<long> ScanForInt32(int value)
+        {
+            if (!_isAttached || _processHandle == IntPtr.Zero)
+            {
+                throw new InvalidOperationException("Not attached to process");
+            }
+
+            var matches = new List<long>();
+            byte[] buffer = new byte[ScanChunkSize];
+            IntPtr address = IntPtr.Zero;
+            long lastAddress = 0;
+
+            while (VirtualQueryEx(_processHandle, address, out MEMORY_BASIC_INFORMATION mbi, (uint)Marshal.SizeOf<MEMORY_BASIC_INFORMATION>()) != IntPtr.Zero)
+            {
+                long regionBase = mbi.BaseAddress.ToInt64();
+                long regionSize = mbi.RegionSize.ToInt64();
+                if (regionSize <= 0)
+                    break;
+
+                bool writable = mbi.State == MEM_COMMIT &&
+                                mbi.Type == MEM_PRIVATE &&
+                                (mbi.Protect & PAGE_GUARD) == 0 &&
+                                (mbi.Protect & PAGE_NOACCESS) == 0 &&
+                                (mbi.Protect & (PAGE_READWRITE | PAGE_WRITECOPY | PAGE_EXECUTE_READWRITE | PAGE_EXECUTE_WRITECOPY)) != 0;
+
+                if (writable)
                 {
-                    return BitConverter.ToInt32(buffer, 0);
+                    for (long offset = 0; offset < regionSize; offset += ScanChunkSize)
+                    {
+                        int toRead = (int)Math.Min(ScanChunkSize, regionSize - offset);
+                        if (!ReadProcessMemory(_processHandle, new IntPtr(regionBase + offset), buffer, toRead, out int bytesRead))
+                            continue;
+
+                        for (int i = 0; i + 4 <= bytesRead; i += 4)
+                        {
+                            if (BitConverter.ToInt32(buffer, i) == value)
+                                matches.Add(regionBase + offset + i);
+                        }
+                    }
                 }
 
-                return 0;
+                long next = regionBase + regionSize;
+                if (next <= lastAddress)
+                    break;
+                lastAddress = next;
+                address = new IntPtr(next);
             }
-            catch (Exception)
-            {
-                return 0;
-            }
+
+            return matches;
         }
 
-        public bool WriteValue(long baseOffset, int[] offsets, int value)
+        // Cheat Engine style "next scan": keeps only the candidates that now hold value.
+        public List<long> FilterInt32(IEnumerable<long> candidates, int value)
         {
             if (!_isAttached || _processHandle == IntPtr.Zero)
             {
                 throw new InvalidOperationException("Not attached to process");
             }
 
-            try
+            var matches = new List<long>();
+            byte[] buffer = new byte[4];
+            foreach (long candidate in candidates)
             {
-                IntPtr address = ResolvePointerChain(baseOffset, offsets);
-
-                byte[] buffer = BitConverter.GetBytes(value);
-                return WriteProcessMemory(_processHandle, address, buffer, buffer.Length, out _);
-            }
-            catch (Exception)
-            {
-                return false;
-            }
-        }
-
-        public float ReadFloatValue(long baseOffset, int[] offsets)
-        {
-            if (!_isAttached || _processHandle == IntPtr.Zero)
-            {
-                throw new InvalidOperationException("Not attached to process");
-            }
-
-            try
-            {
-                IntPtr address = ResolvePointerChain(baseOffset, offsets);
-
-                byte[] buffer = new byte[4];
-                if (ReadProcessMemory(_processHandle, address, buffer, buffer.Length, out _))
+                if (ReadProcessMemory(_processHandle, new IntPtr(candidate), buffer, 4, out int read) &&
+                    read == 4 && BitConverter.ToInt32(buffer, 0) == value)
                 {
-                    return BitConverter.ToSingle(buffer, 0);
+                    matches.Add(candidate);
                 }
-
-                return 0f;
-            }
-            catch (Exception)
-            {
-                return 0f;
-            }
-        }
-
-        public bool WriteFloatValue(long baseOffset, int[] offsets, float value)
-        {
-            if (!_isAttached || _processHandle == IntPtr.Zero)
-            {
-                throw new InvalidOperationException("Not attached to process");
             }
 
-            try
-            {
-                IntPtr address = ResolvePointerChain(baseOffset, offsets);
-
-                byte[] buffer = BitConverter.GetBytes(value);
-                return WriteProcessMemory(_processHandle, address, buffer, buffer.Length, out _);
-            }
-            catch (Exception)
-            {
-                return false;
-            }
-        }
-
-        private IntPtr ResolvePointerChain(long baseOffset, int[] offsets)
-        {
-            if (offsets == null || offsets.Length == 0)
-            {
-                return IntPtr.Add(_moduleBase, (int)baseOffset);
-            }
-
-            IntPtr address = IntPtr.Add(_moduleBase, (int)baseOffset);
-
-            byte[] buffer = new byte[IntPtr.Size];
-            if (!ReadProcessMemory(_processHandle, address, buffer, buffer.Length, out _))
-            {
-                return IntPtr.Zero;
-            }
-
-            address = IntPtr.Size == 8
-                ? new IntPtr(BitConverter.ToInt64(buffer, 0))
-                : new IntPtr(BitConverter.ToInt32(buffer, 0));
-
-            for (int i = 0; i < offsets.Length - 1; i++)
-            {
-                address = IntPtr.Add(address, offsets[i]);
-
-                if (!ReadProcessMemory(_processHandle, address, buffer, buffer.Length, out _))
-                {
-                    return IntPtr.Zero;
-                }
-
-                address = IntPtr.Size == 8
-                    ? new IntPtr(BitConverter.ToInt64(buffer, 0))
-                    : new IntPtr(BitConverter.ToInt32(buffer, 0));
-            }
-
-            address = IntPtr.Add(address, offsets[offsets.Length - 1]);
-
-            return address;
+            return matches;
         }
 
         public bool IsProcessRunning()

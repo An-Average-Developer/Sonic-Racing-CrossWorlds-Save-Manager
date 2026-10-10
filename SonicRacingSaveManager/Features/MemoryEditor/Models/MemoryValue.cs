@@ -10,8 +10,7 @@ namespace SonicRacingSaveManager.Features.MemoryEditor.Models
         private int _currentValue;
         private int _newValue;
         private string _description = string.Empty;
-        private long _baseAddress;
-        private int[] _offsets = Array.Empty<int>();
+        private long _address;
 
         public string Name
         {
@@ -53,22 +52,13 @@ namespace SonicRacingSaveManager.Features.MemoryEditor.Models
             }
         }
 
-        public long BaseAddress
+        /// <summary>Absolute address found with the ticket search; 0 until located.</summary>
+        public long Address
         {
-            get => _baseAddress;
+            get => _address;
             set
             {
-                _baseAddress = value;
-                OnPropertyChanged();
-            }
-        }
-
-        public int[] Offsets
-        {
-            get => _offsets;
-            set
-            {
-                _offsets = value;
+                _address = value;
                 OnPropertyChanged();
             }
         }

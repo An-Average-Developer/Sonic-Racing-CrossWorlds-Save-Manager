@@ -5,6 +5,7 @@
         xmlns:local="clr-namespace:SonicRacingSaveManager"
         xmlns:reports="clr-namespace:SonicRacingSaveManager.Features.Reports.Views"
         xmlns:steam="clr-namespace:SonicRacingSaveManager.Features.Steam.Views"
+        xmlns:seasonal="clr-namespace:SonicRacingSaveManager.Common.Seasonal"
         Title="Sonic Racing CrossWorlds - Save Manager"
         Height="1000"
         Width="1000"
@@ -62,19 +63,26 @@
                        VerticalAlignment="Top"/>
             </Grid>
 
-            <!-- Main Content Container -->
-            <Grid x:Name="MainContent" Grid.RowSpan="3">
+            <!-- Main Content Container. Own AdornerDecorator so seasonal decorations
+                 (drawn as adorners) stay below the theme transition overlay. -->
+            <AdornerDecorator Grid.RowSpan="3">
+            <Grid x:Name="MainContent" ClipToBounds="False">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
+            <!-- Seasonal scenery behind the whole UI (sky, moon/sun, landscape, garland under the header) -->
+            <seasonal:SeasonalBackdrop Grid.Row="0" Grid.RowSpan="3"
+                                       GarlandTop="{Binding ActualHeight, ElementName=HeaderGrid}"/>
+
             <!-- Header -->
-            <Grid Grid.Row="0">
+            <Grid x:Name="HeaderGrid" Grid.Row="0">
                 <materialDesign:ColorZone Mode="PrimaryMid"
                                          Padding="16"
-                                         materialDesign:ElevationAssist.Elevation="Dp4">
+                                         materialDesign:ElevationAssist.Elevation="Dp4"
+                                         seasonal:SeasonalDecorations.Decoration="Header">
                     <DockPanel>
                         <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
                             <materialDesign:PackIcon Kind="ContentSave"
@@ -122,6 +130,16 @@
                                      FontWeight="SemiBold"/>
                         </StackPanel>
                     </Button>
+                    <Button x:Name="SettingsButton"
+                            Style="{StaticResource MaterialDesignFloatingActionButton}"
+                            ToolTip="Settings"
+                            Click="SettingsButton_Click"
+                            Margin="5,0"
+                            Width="50"
+                            Height="50"
+                            Background="{DynamicResource PrimaryHueMidBrush}">
+                        <materialDesign:PackIcon Kind="Cog" Width="26" Height="26"/>
+                    </Button>
                     <Button x:Name="ThemeToggleButton"
                             Style="{StaticResource MaterialDesignFloatingActionButton}"
                             ToolTip="Toggle Theme"
@@ -151,6 +169,42 @@
                         <materialDesign:PackIcon Kind="FolderMultiple" Width="26" Height="26"/>
                     </Button>
                 </StackPanel>
+
+                <!-- Settings Popup Menu -->
+                <Popup x:Name="SettingsPopup"
+                       Placement="Bottom"
+                       PlacementTarget="{Binding ElementName=SettingsButton}"
+                       StaysOpen="False"
+                       AllowsTransparency="True"
+                       PopupAnimation="Fade">
+                    <Border Background="{DynamicResource MaterialDesignPaper}"
+                            BorderBrush="{DynamicResource PrimaryHueMidBrush}"
+                            BorderThickness="2"
+                            CornerRadius="5"
+                            Padding="10"
+                            TextElement.Foreground="{DynamicResource MaterialDesignBody}"
+                            materialDesign:ElevationAssist.Elevation="Dp8">
+                        <StackPanel>
+                            <TextBlock Text="Season Theme"
+                                       FontWeight="SemiBold"
+                                       Margin="5,0,5,2"/>
+                            <TextBlock Text="Changes the app look. Default uses the current event theme."
+                                       FontSize="11"
+                                       Opacity="0.6"
+                                       TextWrapping="Wrap"
+                                       MaxWidth="220"
+                                       HorizontalAlignment="Left"
+                                       Margin="5,0,5,4"/>
+                            <StackPanel x:Name="SeasonThemePanel">
+                                <RadioButton GroupName="SeasonTheme" Tag="default"   Content="Default"   Margin="5,3" Checked="SeasonThemeRadio_Checked" Style="{StaticResource MaterialDesignRadioButton}"/>
+                                <RadioButton GroupName="SeasonTheme" Tag="classic"   Content="Classic"   Margin="5,3" Checked="SeasonThemeRadio_Checked" Style="{StaticResource MaterialDesignRadioButton}"/>
+                                <RadioButton GroupName="SeasonTheme" Tag="summer"    Content="Summer"    Margin="5,3" Checked="SeasonThemeRadio_Checked" Style="{StaticResource MaterialDesignRadioButton}"/>
+                                <RadioButton GroupName="SeasonTheme" Tag="halloween" Content="Halloween" Margin="5,3" Checked="SeasonThemeRadio_Checked" Style="{StaticResource MaterialDesignRadioButton}"/>
+                                <RadioButton GroupName="SeasonTheme" Tag="christmas" Content="Christmas" Margin="5,3" Checked="SeasonThemeRadio_Checked" Style="{StaticResource MaterialDesignRadioButton}"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </Popup>
             </Grid>
 
             <!-- Main Content -->
@@ -597,7 +651,7 @@
                                                    Height="20"
                                                    HorizontalAlignment="Center"
                                                    Margin="0,0,0,8"/>
-                            <TextBlock Text="Cheat&#x0a;Menu"
+                            <TextBlock Text="Tickets&#x0a;Menu"
                                      HorizontalAlignment="Center"
                                      TextAlignment="Center"
                                      FontSize="10"
@@ -616,7 +670,7 @@
                             <!-- Header -->
                             <materialDesign:Card Grid.Row="0" Style="{StaticResource CardStyle}">
                                 <StackPanel>
-                                    <TextBlock Text="Cheat Menu"
+                                    <TextBlock Text="Tickets Menu"
                                              Style="{StaticResource MaterialDesignHeadline6TextBlock}"
                                              Margin="0,0,0,15"/>
 
@@ -944,7 +998,8 @@
                             </materialDesign:Card>
 
                             <!-- Tool Selection Cards -->
-                            <materialDesign:Card Grid.Row="1" Style="{StaticResource CardStyle}" Margin="-10,-10,0,0" VerticalAlignment="Top" Background="Transparent">
+                            <materialDesign:Card Grid.Row="1" Style="{StaticResource CardStyle}" Margin="-10,-10,0,0" VerticalAlignment="Top" Background="Transparent"
+                                                 seasonal:SeasonalDecorations.Decoration="">
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Top">
                                 <!-- Ticket Editor Card -->
                                 <materialDesign:Card Style="{StaticResource CardStyle}"
@@ -1029,7 +1084,7 @@
                                              Style="{StaticResource MaterialDesignHeadline6TextBlock}"
                                              Margin="0,0,0,15"/>
 
-                                    <TextBlock Text="Edit game values in real-time. Make sure the game is running before attaching."
+                                    <TextBlock Text="Follow the steps in Find Tickets to locate your tickets, then edit them."
                                              Style="{StaticResource MaterialDesignBody2TextBlock}"
                                              Opacity="0.7"
                                              TextWrapping="Wrap"
@@ -1063,6 +1118,94 @@
                                                 IsEnabled="{Binding MemoryEditor.IsAttached}"
                                                 Content="Auto-refresh (1s)"
                                                 Style="{StaticResource MaterialDesignCheckBox}"/>
+
+                                        <!-- Find Tickets (Cheat Engine style search) -->
+                                        <Border Background="{DynamicResource MaterialDesignDivider}"
+                                               CornerRadius="8"
+                                               Padding="12"
+                                               Margin="0,12,0,0">
+                                            <StackPanel>
+                                                <DockPanel Margin="0,0,0,6">
+                                                    <TextBlock Text="{Binding MemoryEditor.TicketStepTitle}"
+                                                             DockPanel.Dock="Right"
+                                                             FontSize="11"
+                                                             Opacity="0.6"
+                                                             VerticalAlignment="Center"/>
+                                                    <TextBlock Text="Find Tickets"
+                                                             FontSize="13"
+                                                             FontWeight="SemiBold"/>
+                                                </DockPanel>
+
+                                                <!-- Current step instructions -->
+                                                <TextBlock Text="{Binding MemoryEditor.TicketStepText}"
+                                                         FontSize="12"
+                                                         TextWrapping="Wrap"
+                                                         Margin="0,0,0,8"/>
+
+                                                <!-- Steps 1, 3, 4: change menu in-game, then Next -->
+                                                <Button Command="{Binding MemoryEditor.NextTicketStepCommand}"
+                                                      Style="{StaticResource MaterialDesignRaisedButton}"
+                                                      HorizontalAlignment="Right"
+                                                      Height="32"
+                                                      Padding="12,0"
+                                                      Visibility="{Binding MemoryEditor.IsTicketNextStep, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <TextBlock Text="Next" VerticalAlignment="Center"/>
+                                                        <materialDesign:PackIcon Kind="ChevronRight"
+                                                                               Width="18"
+                                                                               Height="18"
+                                                                               VerticalAlignment="Center"
+                                                                               Margin="4,0,0,0"/>
+                                                    </StackPanel>
+                                                </Button>
+
+                                                <!-- Steps 2, 5: type the ticket amount and Search -->
+                                                <Grid Visibility="{Binding MemoryEditor.IsTicketSearchInputStep, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBox Grid.Column="0"
+                                                           Text="{Binding MemoryEditor.TicketSearchValue, UpdateSourceTrigger=PropertyChanged}"
+                                                           materialDesign:HintAssist.Hint="Tickets you have"
+                                                           Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                                           Padding="8,6"
+                                                           VerticalAlignment="Center"
+                                                           Margin="0,0,8,0"/>
+                                                    <Button Grid.Column="1"
+                                                          Command="{Binding MemoryEditor.SearchTicketsCommand}"
+                                                          Style="{StaticResource MaterialDesignRaisedButton}"
+                                                          Height="36"
+                                                          Padding="12,0"
+                                                          VerticalAlignment="Center">
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <materialDesign:PackIcon Kind="Magnify"
+                                                                                   Width="18"
+                                                                                   Height="18"
+                                                                                   VerticalAlignment="Center"
+                                                                                   Margin="0,0,6,0"/>
+                                                            <TextBlock Text="Search" VerticalAlignment="Center"/>
+                                                        </StackPanel>
+                                                    </Button>
+                                                </Grid>
+                                                <ProgressBar IsIndeterminate="True"
+                                                           Height="4"
+                                                           Margin="0,8,0,0"
+                                                           Visibility="{Binding MemoryEditor.IsTicketSearching, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                                <TextBlock Text="{Binding MemoryEditor.TicketSearchHint}"
+                                                         FontSize="11"
+                                                         Opacity="0.7"
+                                                         TextWrapping="Wrap"
+                                                         Margin="0,8,0,0"/>
+                                                <Button Command="{Binding MemoryEditor.NewTicketSearchCommand}"
+                                                      Style="{StaticResource MaterialDesignFlatButton}"
+                                                      HorizontalAlignment="Left"
+                                                      Height="28"
+                                                      Padding="6,0"
+                                                      Margin="0,4,0,0"
+                                                      Content="New Search"/>
+                                            </StackPanel>
+                                        </Border>
                                     </StackPanel>
 
                                     <!-- Values List -->
@@ -1956,7 +2099,11 @@
                                VerticalAlignment="Center"/>
                 </Grid>
             </materialDesign:ColorZone>
+
+            <!-- Seasonal ambient animations (click-through) -->
+            <seasonal:SeasonalOverlay Grid.Row="0" Grid.RowSpan="3" Panel.ZIndex="450"/>
             </Grid>
+            </AdornerDecorator>
         </Grid>
     </materialDesign:DialogHost>
 </Window>

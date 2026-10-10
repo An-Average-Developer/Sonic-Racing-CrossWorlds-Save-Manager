@@ -1,10 +1,12 @@
-2.0.0
+2.1.0
 ## Additions
-- Added a Manual Update option as a fallback for when the automatic updater doesn't detect or install a new version
-- Added Discord Rich Presence, showing your current activity in the app on your Discord profile
-- Added a Report a Bug tab to send bug reports directly from the app, with Discord account verification and optional screenshots
-- Added an Auto-Attach toggle to the Memory Editor, with a manual process picker for when the game isn't detected automatically
-- Added an Add to Steam tab to add this app as a non-Steam game shortcut, complete with its own icon and library artwork
+- Added seasonal themes (Summer, Halloween and Christmas), with animated backgrounds and seasonal colors
+- Added a Settings button in the header to pick the season theme (Default, Classic, Summer, Halloween or Christmas)
+
+## Changes
+- Replaced the ticket pointer system with a step-by-step Find Tickets guide that searches the game's memory for your ticket amount, so tickets can be found reliably after game updates
+- Renamed the Cheat Menu tab to Tickets Menu
 
 ## Bug Fixes
-- The app now requires administrator privileges to run, needed for reliable memory access
+- Updated the Freeze, Multiply and x500 ticket patches for the latest game version (1.4.3)
+- Fixed the Reports and Steam tabs being misaligned compared to the other tabs

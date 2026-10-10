@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:converters="clr-namespace:SonicRacingSaveManager.Common.Converters"
+             xmlns:seasonal="clr-namespace:SonicRacingSaveManager.Common.Seasonal"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
         <ResourceDictionary>
@@ -22,6 +23,8 @@
             <!-- Custom Colors for Sonic Theme -->
             <SolidColorBrush x:Key="SonicBlueBrush" Color="#0066CC"/>
             <SolidColorBrush x:Key="SonicOrangeBrush" Color="#FF6B00"/>
+            <!-- Replaced at runtime by ThemeService for seasonal themes -->
+            <SolidColorBrush x:Key="SeasonalCardBackgroundBrush" Color="#424242"/>
 
             <!-- Fade In Animation -->
             <Storyboard x:Key="FadeInAnimation">
@@ -37,6 +40,7 @@
             <Style x:Key="CardStyle" TargetType="materialDesign:Card">
                 <Setter Property="Margin" Value="10"/>
                 <Setter Property="Padding" Value="20"/>
+                <Setter Property="seasonal:SeasonalDecorations.Decoration" Value="Card"/>
                 <Style.Triggers>
                     <EventTrigger RoutedEvent="Loaded">
                         <BeginStoryboard Storyboard="{StaticResource FadeInAnimation}"/>
@@ -122,6 +126,10 @@
                         </Trigger.ExitActions>
                     </Trigger>
                 </Style.Triggers>
+            </Style>
+
+            <Style TargetType="materialDesign:Card" BasedOn="{StaticResource {x:Type materialDesign:Card}}">
+                <Setter Property="Background" Value="{DynamicResource SeasonalCardBackgroundBrush}"/>
             </Style>
         </ResourceDictionary>
     </Application.Resources>

@@ -16,6 +16,7 @@ namespace SonicRacingSaveManager
     {
         private MainViewModel? ViewModel => DataContext as MainViewModel;
         private bool _isThemeAnimating = false;
+        private bool _isInitializing = true;
 
         private readonly DiscordPresenceService _discordPresence = new();
 
@@ -28,6 +29,9 @@ namespace SonicRacingSaveManager
 
             _discordPresence.SetVersion(AppVersion.GetDisplayVersion());
             _discordPresence.ApplySettings(true);
+
+            RefreshSeasonThemeRadios();
+            _isInitializing = false;
         }
 
         private void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
@@ -73,6 +77,28 @@ namespace SonicRacingSaveManager
             {
                 ViewModel.MemoryEditor.SelectTicketEditorCommand.Execute(null);
             }
+        }
+
+        private void SettingsButton_Click(object sender, RoutedEventArgs e)
+        {
+            SettingsPopup.IsOpen = !SettingsPopup.IsOpen;
+        }
+
+        // ── Season theme ────────────────────────────────────────────────────────
+        private void RefreshSeasonThemeRadios()
+        {
+            var theme = SeasonThemeSettings.Current.Theme;
+            foreach (var radio in SeasonThemePanel.Children.OfType<RadioButton>())
+                radio.IsChecked = (string)radio.Tag == theme;
+        }
+
+        private void SeasonThemeRadio_Checked(object sender, RoutedEventArgs e)
+        {
+            if (_isInitializing || sender is not RadioButton { Tag: string theme }) return;
+
+            SeasonThemeSettings.Current.Theme = theme;
+            SeasonThemeSettings.Current.Save();
+            ThemeService.Instance.RefreshSeason();
         }
 
         private void ThemeToggleButton_Click(object sender, RoutedEventArgs e)

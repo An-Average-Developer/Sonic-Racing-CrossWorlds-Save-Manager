@@ -1,8 +1,10 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Threading;
@@ -22,7 +24,11 @@ namespace SonicRacingSaveManager.Features.MemoryEditor.ViewModels
         private bool _isAttached;
         private string _statusMessage = "Searching for game process...";
         private bool _autoRefresh = true;
-        private int _lastKnownGoodTicketValue = 0;
+        private List<long>? _ticketCandidates;
+        private int _ticketSearchValue;
+        private bool _isTicketSearching;
+        private int _ticketSearchStep = 1;
+        private string _ticketSearchHint = "";
         private string _selectedTool = "menu";
         private bool _isTicketsFrozen = false;
         private bool _isTicketsMultiplied = false;
@@ -31,28 +37,28 @@ namespace SonicRacingSaveManager.Features.MemoryEditor.ViewModels
         private GameProcessInfo? _selectedGameProcess;
 
         // Freeze configuration for tickets
-        private const long TICKET_FREEZE_ADDRESS = 0x4D83DBD;
+        private const long TICKET_FREEZE_ADDRESS = 0x4D830ED;
         private static readonly byte[] FREEZE_BYTES = new byte[] { 0x90, 0x90, 0x90 }; // NOP instructions
         private static readonly byte[] ORIGINAL_BYTES = new byte[] { 0x89, 0x5E, 0x58 }; // mov [rsi+58],ebx
 
         // Multiply configuration for tickets (flips sub→add so spending gains tickets)
-        private const long TICKET_MULTIPLY_ADDRESS = 0x4D83DAB; //6 time up of the freeze bytes
+        private const long TICKET_MULTIPLY_ADDRESS = 0x4D830DB; //6 time up of the freeze bytes
         private static readonly byte[] MULTIPLY_BYTES = new byte[] { 0x41, 0x03, 0xC6 }; // add eax,r14d
         private static readonly byte[] MULTIPLY_ORIGINAL_BYTES = new byte[] { 0x41, 0x2B, 0xC6 }; // sub eax,r14d
 
-        // Multiply x500 configuration - code cave in INT3 padding at 4D83DD1
-        // Patches 5 bytes at 4D83DAB (sub+cmp) with JMP to cave, cave computes eax += r14d*500
-        private const long TICKET_MULTIPLY500_PATCH_ADDRESS = 0x4D83DAB;
-        private static readonly byte[] MULTIPLY500_PATCH_BYTES = new byte[] { 0xE9, 0x21, 0x00, 0x00, 0x00 }; // JMP to cave at 4D83DD1
+        // Multiply x500 configuration - code cave in INT3 padding at 4D83101
+        // Patches 5 bytes at 4D830DB (sub+cmp) with JMP to cave, cave computes eax += r14d*500
+        private const long TICKET_MULTIPLY500_PATCH_ADDRESS = 0x4D830DB;
+        private static readonly byte[] MULTIPLY500_PATCH_BYTES = new byte[] { 0xE9, 0x21, 0x00, 0x00, 0x00 }; // JMP to cave at 4D83101
         private static readonly byte[] MULTIPLY500_PATCH_ORIGINAL = new byte[] { 0x41, 0x2B, 0xC6, 0x3B, 0xC7 }; // sub eax,r14d; cmp eax,edi
-        private const long TICKET_MULTIPLY500_CAVE_ADDRESS = 0x4D83DD1; // 6 lines below the freeze bytes
+        private const long TICKET_MULTIPLY500_CAVE_ADDRESS = 0x4D83101; // 6 lines below the freeze bytes
         private static readonly byte[] MULTIPLY500_CAVE_BYTES = new byte[]
         {
             0x45, 0x69, 0xF6, 0xF4, 0x01, 0x00, 0x00,       // imul r14d,r14d,500
             0x41, 0x03, 0xC6,                               // add eax,r14d
             0x3B, 0xC7,                                     // cmp eax,edi  (restored)
             0x90,                                           // nop
-            0xEB, 0xD0                                      // jmp short -0x30 → back to 4D83DB0
+            0xEB, 0xD0                                      // jmp short -0x30 → back to 4D830E0
         };
         private static readonly byte[] MULTIPLY500_CAVE_ORIGINAL = new byte[]
         {
@@ -79,6 +85,9 @@ namespace SonicRacingSaveManager.Features.MemoryEditor.ViewModels
             ToggleTicketsFreezeCommand = new RelayCommand(ToggleTicketsFreeze, CanToggleTicketsFreeze);
             ToggleTicketsMultiplyCommand = new RelayCommand(ToggleTicketsMultiply, CanToggleTicketsMultiply);
             ToggleTicketsMultiply500Command = new RelayCommand(ToggleTicketsMultiply500, CanToggleTicketsMultiply500);
+            SearchTicketsCommand = new RelayCommand(SearchTickets, CanSearchTickets);
+            NewTicketSearchCommand = new RelayCommand(_ => ResetTicketSearch(), _ => IsAttached && !IsTicketSearching);
+            NextTicketStepCommand = new RelayCommand(NextTicketStep);
 
             MemoryValues = new ObservableCollection<MemoryValue>
             {
@@ -86,8 +95,6 @@ namespace SonicRacingSaveManager.Features.MemoryEditor.ViewModels
                 {
                     Name = "Tickets",
                     Description = "In-game currency for purchases",
-                    BaseAddress = 0x151058DC,
-                    Offsets = new int[] { 0x60, 0x10, 0x1D8, 0x108, 0x2D8, 0xD8, 0x58 },
                     CurrentValue = 0,
                     NewValue = 0
                 }
@@ -114,6 +121,77 @@ namespace SonicRacingSaveManager.Features.MemoryEditor.ViewModels
 
         public ObservableCollection<MemoryValue> MemoryValues { get; }
 
+        private MemoryValue Tickets => MemoryValues[0];
+
+        /// <summary>The ticket amount the user typed for the current search step.</summary>
+        public int TicketSearchValue
+        {
+            get => _ticketSearchValue;
+            set
+            {
+                _ticketSearchValue = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public bool IsTicketSearching
+        {
+            get => _isTicketSearching;
+            set
+            {
+                _isTicketSearching = value;
+                OnPropertyChanged();
+                RaiseTicketSearchCommands();
+            }
+        }
+
+        public bool IsTicketLocated => Tickets.Address != 0;
+
+        /// <summary>
+        /// Guided search step: 1 = go to Friendship, 2 = type tickets + Search, 3 = go to
+        /// Customize Machine, 4 = back to Friendship, 5 = spend 1 ticket + Search, 6 = found.
+        /// </summary>
+        public int TicketSearchStep
+        {
+            get => _ticketSearchStep;
+            set
+            {
+                _ticketSearchStep = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(TicketStepText));
+                OnPropertyChanged(nameof(TicketStepTitle));
+                OnPropertyChanged(nameof(IsTicketNextStep));
+                OnPropertyChanged(nameof(IsTicketSearchInputStep));
+            }
+        }
+
+        public string TicketStepTitle => TicketSearchStep == 6 ? "Done" : $"Step {TicketSearchStep} of 5";
+
+        public string TicketStepText => TicketSearchStep switch
+        {
+            1 => "First, go to the Friendship menu in-game.",
+            2 => "Type the amount of tickets you have right now and press Search.",
+            3 => "Go back to the Customize Machine menu.",
+            4 => "Go back to the Friendship menu.",
+            5 => "Spend 1 ticket, then type your new amount of tickets and press Search.",
+            _ => "Tickets found! You can now edit them.",
+        };
+
+        public bool IsTicketNextStep => TicketSearchStep is 1 or 3 or 4;
+
+        public bool IsTicketSearchInputStep => TicketSearchStep is 2 or 5;
+
+        /// <summary>Extra result info under the current step (match count, errors). Empty when there's nothing to add.</summary>
+        public string TicketSearchHint
+        {
+            get => _ticketSearchHint;
+            set
+            {
+                _ticketSearchHint = value;
+                OnPropertyChanged();
+            }
+        }
+
         public MemoryValue? SelectedValue
         {
             get => _selectedValue;
@@ -136,6 +214,7 @@ namespace SonicRacingSaveManager.Features.MemoryEditor.ViewModels
                 ((RelayCommand)DetachFromProcessCommand).RaiseCanExecuteChanged();
                 ((RelayCommand)RefreshValuesCommand).RaiseCanExecuteChanged();
                 ((RelayCommand)ApplyValueCommand).RaiseCanExecuteChanged();
+                RaiseTicketSearchCommands();
             }
         }
 
@@ -245,6 +324,9 @@ namespace SonicRacingSaveManager.Features.MemoryEditor.ViewModels
         public ICommand ToggleTicketsFreezeCommand { get; }
         public ICommand ToggleTicketsMultiplyCommand { get; }
         public ICommand ToggleTicketsMultiply500Command { get; }
+        public ICommand SearchTicketsCommand { get; }
+        public ICommand NewTicketSearchCommand { get; }
+        public ICommand NextTicketStepCommand { get; }
 
         private bool CanAttachToProcess(object? parameter)
         {
@@ -382,7 +464,7 @@ namespace SonicRacingSaveManager.Features.MemoryEditor.ViewModels
                 IsTicketsMultiply500 = false;
                 _memoryService.DetachFromProcess();
                 IsAttached = false;
-                _lastKnownGoodTicketValue = 0;
+                ResetTicketSearch();
 
                 if (IsAutoAttachEnabled)
                 {
@@ -414,22 +496,10 @@ namespace SonicRacingSaveManager.Features.MemoryEditor.ViewModels
             {
                 foreach (var memValue in MemoryValues)
                 {
-                    int value = _memoryService.ReadValue(memValue.BaseAddress, memValue.Offsets);
+                    if (memValue.Address == 0)
+                        continue;
 
-                    if (memValue.Name == "Tickets")
-                    {
-                        if (value == 0 && _lastKnownGoodTicketValue > 0)
-                        {
-                            value = _lastKnownGoodTicketValue;
-                            StatusMessage = $"Using cached value (tickets menu may be active) - {DateTime.Now:HH:mm:ss}";
-                        }
-                        else if (value > 0)
-                        {
-                            _lastKnownGoodTicketValue = value;
-                            StatusMessage = $"Values refreshed at {DateTime.Now:HH:mm:ss}";
-                        }
-                    }
-
+                    int value = _memoryService.ReadInt32(memValue.Address);
                     memValue.CurrentValue = value;
 
                     if (memValue.NewValue == 0 || memValue.NewValue == memValue.CurrentValue)
@@ -438,7 +508,7 @@ namespace SonicRacingSaveManager.Features.MemoryEditor.ViewModels
                     }
                 }
 
-                if (!StatusMessage.Contains("cached value"))
+                if (IsTicketLocated)
                 {
                     StatusMessage = $"Values refreshed at {DateTime.Now:HH:mm:ss}";
                 }
@@ -451,21 +521,17 @@ namespace SonicRacingSaveManager.Features.MemoryEditor.ViewModels
 
         private bool CanApplyValue(object? parameter)
         {
-            return IsAttached && SelectedValue != null;
+            return IsAttached && SelectedValue != null && SelectedValue.Address != 0;
         }
 
         private void ApplyValue(object? parameter)
         {
-            if (SelectedValue == null || !IsAttached)
+            if (SelectedValue == null || !IsAttached || SelectedValue.Address == 0)
                 return;
 
             try
             {
-                bool success = _memoryService.WriteValue(
-                    SelectedValue.BaseAddress,
-                    SelectedValue.Offsets,
-                    SelectedValue.NewValue
-                );
+                bool success = _memoryService.WriteInt32(SelectedValue.Address, SelectedValue.NewValue);
 
                 if (success)
                 {
@@ -489,7 +555,8 @@ namespace SonicRacingSaveManager.Features.MemoryEditor.ViewModels
                     {
                         MessageBox.Show(
                             $"Failed to update {SelectedValue.Name}.\n\n" +
-                            "Make sure the game is running and you are attached to the process.",
+                            "Make sure the game is running and you are attached to the process. " +
+                            "If you restarted the game, press New Search and find your tickets again.",
                             "Update Failed",
                             MessageBoxButton.OK,
                             MessageBoxImage.Error
@@ -525,7 +592,7 @@ namespace SonicRacingSaveManager.Features.MemoryEditor.ViewModels
                     IsTicketsMultiply500 = false;
                     _memoryService.DetachFromProcess();
                     IsAttached = false;
-                    _lastKnownGoodTicketValue = 0;
+                    ResetTicketSearch();
 
                     if (IsAutoAttachEnabled)
                     {
@@ -778,6 +845,99 @@ namespace SonicRacingSaveManager.Features.MemoryEditor.ViewModels
             }
 
             ((RelayCommand)ToggleTicketsMultiply500Command).RaiseCanExecuteChanged();
+        }
+
+        // ── Ticket search (Cheat Engine style: search, change the value in-game, search again) ──
+
+        private bool CanSearchTickets(object? parameter)
+        {
+            return IsAttached && !IsTicketSearching;
+        }
+
+        private async void SearchTickets(object? parameter)
+        {
+            if (!IsAttached || IsTicketSearching)
+                return;
+
+            int value = TicketSearchValue;
+            var previous = TicketSearchStep == 5 ? _ticketCandidates : null;
+            IsTicketSearching = true;
+            TicketSearchHint = "Searching...";
+
+            try
+            {
+                var matches = await Task.Run(() => previous == null
+                    ? _memoryService.ScanForInt32(value)
+                    : _memoryService.FilterInt32(previous, value));
+
+                if (matches.Count == 1)
+                {
+                    _ticketCandidates = null;
+                    SetTicketAddress(matches[0]);
+                    TicketSearchStep = 6;
+                    TicketSearchHint = "";
+                    StatusMessage = "Tickets located";
+                    RefreshValues(null);
+                }
+                else if (matches.Count == 0)
+                {
+                    _ticketCandidates = null;
+                    TicketSearchStep = previous == null ? 2 : 1;
+                    TicketSearchHint = previous == null
+                        ? "Nothing found. Check the amount you typed and try again."
+                        : "Nothing matched that amount, so the search was restarted.";
+                    StatusMessage = "Ticket search found nothing";
+                }
+                else
+                {
+                    // Still several candidates: repeat the menu round-trip and spend another ticket.
+                    _ticketCandidates = matches;
+                    TicketSearchStep = 3;
+                    TicketSearchHint = $"{matches.Count:N0} possible addresses left.";
+                    StatusMessage = $"Ticket search: {matches.Count:N0} matches";
+                }
+            }
+            catch (Exception ex)
+            {
+                TicketSearchHint = "Search failed. Try again or press New Search.";
+                StatusMessage = $"Ticket search error: {ex.Message}";
+            }
+            finally
+            {
+                IsTicketSearching = false;
+            }
+        }
+
+        private void ResetTicketSearch()
+        {
+            _ticketCandidates = null;
+            SetTicketAddress(0);
+            Tickets.CurrentValue = 0;
+            Tickets.NewValue = 0;
+            TicketSearchStep = 1;
+            TicketSearchHint = "";
+        }
+
+        private void NextTicketStep(object? parameter)
+        {
+            if (IsTicketNextStep)
+            {
+                TicketSearchHint = "";
+                TicketSearchStep++;
+            }
+        }
+
+        private void SetTicketAddress(long address)
+        {
+            Tickets.Address = address;
+            OnPropertyChanged(nameof(IsTicketLocated));
+            ((RelayCommand)ApplyValueCommand).RaiseCanExecuteChanged();
+        }
+
+        private void RaiseTicketSearchCommands()
+        {
+            (SearchTicketsCommand as RelayCommand)?.RaiseCanExecuteChanged();
+            (NewTicketSearchCommand as RelayCommand)?.RaiseCanExecuteChanged();
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;
