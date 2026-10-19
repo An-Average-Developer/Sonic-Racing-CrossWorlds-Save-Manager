@@ -1,0 +1,30 @@
+3.0.0
+## Additions
+The manager has been rewritten from C# (WPF) to C++: it no longer needs .NET installed and is a single exe
+Added a loading screen while the manager starts
+Added a Changelogs tab with the whole history of the manager
+Added updates from GameBanana as an alternative to GitHub, with its own install button in the Updates tab
+Mod Manager: drag and drop the mods to change their priority
+Tickets Menu: a search box to find any tool (Ctrl+F to focus it, Esc to clear it)
+Tickets Menu: a category list that follows the scroll; click a category to jump to it
+Tickets Menu: a counter of how many options are on, and your ticket amount once it's located
+Reports: the manager's log can be attached to bug reports
+Added an option to turn off the Discord Rich Presence
+
+## Redesigns
+New Tickets Menu: an animated banner with the connection status and the Attach / Detach button, and the tools as tiles grouped in Patches and Ticket Editor
+Updates: the changes of every version since yours, as folding cards grouped by type (Additions, Bug Fixes...)
+New header, navigation rail and status bar, with animated banners on every tab
+Rounder cards and new animations all over the app: screens sliding in, hover and press effects, and options lighting up when they turn on
+Messages and errors now use the manager's own dialogs instead of the Windows message boxes
+The window is now borderless with a fixed size
+
+## Seasonal Themes
+The seasonal themes are dark only: the light / dark button is locked there (grey, with a padlock) and tells you it only works with the Default and Classic themes
+
+## Bug Fixes
+The Mod Manager now detects Sonic Racing CrossWorlds running instead of the wrong process
+Multiply Tickets and Multiply Tickets x500 can no longer be on at the same time (they patch the same spot): each one locks while the other is on
+The Tickets Menu now notices when the game is closed and waits for it to start again
+The Mod Manager's status messages are now shown in the tab
+The selected backup or mod is kept when the lists refresh

@@ -1,0 +1,30 @@
+3.0.0
+## Novedades
+El gestor se ha reescrito de C# (WPF) a C++: ya no necesita .NET instalado y es un solo exe
+Se ha añadido una pantalla de carga mientras se inicia el gestor
+Se ha añadido una pestaña Changelogs con todo el historial del gestor
+Se han añadido las actualizaciones desde GameBanana como alternativa a GitHub, con su propio botón de instalación en la pestaña Updates
+Mod Manager: arrastra y suelta los mods para cambiar su prioridad
+Menú de tickets: un buscador para encontrar cualquier herramienta (Ctrl+F para activarlo, Esc para borrarlo)
+Menú de tickets: una lista de categorías que sigue el desplazamiento; haz clic en una categoría para saltar a ella
+Menú de tickets: un contador de cuántas opciones están activas y tu cantidad de tickets una vez localizada
+Reports: se puede adjuntar el registro del gestor a los reportes de errores
+Se ha añadido una opción para desactivar el Discord Rich Presence
+
+## Rediseños
+Nuevo menú de tickets: un banner animado con el estado de la conexión y el botón Conectar / Desconectar, y las herramientas como tarjetas agrupadas en Parches y Editor de tickets
+Updates: los cambios de cada versión desde la tuya, en tarjetas desplegables agrupadas por tipo (Novedades, Correcciones...)
+Nueva cabecera, barra de navegación y barra de estado, con banners animados en todas las pestañas
+Tarjetas más redondeadas y nuevas animaciones en toda la app: pantallas que se deslizan, efectos al pasar el ratón y al pulsar, y opciones que se iluminan al activarse
+Los mensajes y errores ahora usan los diálogos propios del gestor en lugar de los cuadros de mensaje de Windows
+La ventana ahora no tiene bordes y tiene un tamaño fijo
+
+## Temas de temporada
+Los temas de temporada son solo oscuros: el botón claro / oscuro se bloquea en ellos (gris, con un candado) y avisa de que solo funciona con los temas Predeterminado y Clásico
+
+## Correcciones
+El Mod Manager ahora detecta Sonic Racing CrossWorlds en ejecución en lugar del proceso equivocado
+Multiplicar tickets y Multiplicar tickets x500 ya no pueden estar activos a la vez (modifican el mismo punto): cada uno se bloquea mientras el otro está activo
+El menú de tickets ahora detecta cuándo se cierra el juego y espera a que vuelva a iniciarse
+Los mensajes de estado del Mod Manager ahora se muestran en la pestaña
+La copia de seguridad o el mod seleccionado se mantiene al actualizar las listas
