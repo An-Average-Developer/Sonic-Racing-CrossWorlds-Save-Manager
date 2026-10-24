@@ -39,6 +39,8 @@ public:
     void EnableMod(Models::ModInfo& mod) const;
     void DisableMod(Models::ModInfo& mod) const;
     void ToggleMod(Models::ModInfo& mod) const;
+    // Sends the mod's folder to the Recycle Bin
+    void UninstallMod(const Models::ModInfo& mod) const;
     void OpenModsFolder() const;
 
     // ── ModUpdater.cpp ──

@@ -70,6 +70,9 @@ inline constexpr const wchar_t* UserProfileUrl = L"https://discord.com/users/"; 
 inline constexpr const wchar_t* BugReportWebhook =
     L"BugReportWebhook";
 inline constexpr int ReportEmbedColor = 0x0066CC;
+// Bot of the app above, used to look up a reporter's current avatar (GET /users/{id}) once their
+// OAuth token expired (note the token ships inside the exe). Empty: the avatar cached at sign-in
+inline constexpr const wchar_t* AvatarLookupBotToken = L"AvatarLookupBotToken";
 } // namespace Discord
 
 } // namespace SonicRacingSaveManager::Config

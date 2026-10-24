@@ -35,7 +35,8 @@ float SelectionPop(UI::Ui& ui, const char* id, const std::wstring& key) {
 }
 
 // Big round avatar with the icon, the title and a caption under it, centered
-float Hero(UI::Ui& ui, const Rect& c, M::Icon icon, const std::wstring& title, const std::wstring& caption, float pop) {
+// `picture` (the account's Steam picture) fills the circle instead of the icon when there is one
+float Hero(UI::Ui& ui, const Rect& c, M::Icon icon, const std::wstring& title, const std::wstring& caption, float pop, const ImagePtr& picture = nullptr) {
     const M::Palette& p = M::P();
     const float t = static_cast<float>(ui.Time());
     const float cx = c.CX(), cy = c.y + 44.f;
@@ -44,8 +45,14 @@ float Hero(UI::Ui& ui, const Rect& c, M::Icon icon, const std::wstring& title, c
     ui.KeepAnimatingThrottled();
     const float s = Anim::EaseOutBack(pop, 1.4f);
     ui.g.GlowRound({ cx - 34.f, cy - 34.f, 68.f, 68.f }, 34.f, p.primaryMid.color, 16.f, 0.35f);
-    ui.g.FillRadial({ cx - 34.f, cy - 34.f, 68.f, 68.f }, { { 0.f, Lerp(p.primaryMid.color, Colors::White, 0.3f) }, { 1.f, p.primaryDark.color } });
-    M::DrawIcon(ui.g, icon, cx, cy + 2.f * std::sin(t * 2.f), 34.f * s, p.primaryMid.foreground);
+    if (picture) {
+        const float radius = 34.f * std::max(0.6f, s);
+        ui.g.DrawImageRounded(*picture, { cx - radius, cy - radius, radius * 2.f, radius * 2.f }, radius, 1.f, Stretch::UniformToFill);
+        ui.g.StrokeEllipse(cx, cy, radius + 1.5f, radius + 1.5f, p.primaryMid.color, 3.f);
+    } else {
+        ui.g.FillRadial({ cx - 34.f, cy - 34.f, 68.f, 68.f }, { { 0.f, Lerp(p.primaryMid.color, Colors::White, 0.3f) }, { 1.f, p.primaryDark.color } });
+        M::DrawIcon(ui.g, icon, cx, cy + 2.f * std::sin(t * 2.f), 34.f * s, p.primaryMid.foreground);
+    }
     M::Motion::Enter enter(ui, pop, 8.f);
     TextStyle name = Style(16.f, DWRITE_FONT_WEIGHT_BOLD, false, HAlign::Center);
     name.valign = VAlign::Center;
@@ -76,7 +83,7 @@ float AccountCard(UI::Ui& ui, const Rect& r, const Models::SaveAccount* account,
     }
     const float pop = SelectionPop(ui, "bk-account-pop", account->accountId);
     float y = body.y + Hero(ui, body, M::Icon::AccountCircle, account->accountName.empty() ? account->accountId : account->accountName,
-                            Loc::Fmt("backup_account_id", account->accountId), pop);
+                            Loc::Fmt("backup_account_id", account->accountId), pop, SteamAvatar(account->accountId));
     {
         M::Motion::Enter enter(ui, pop, 10.f);
         InfoChip(ui, { c.x, y, c.w, kChipH }, M::Icon::FileMultiple, Loc::Get("backup_save_files"), FilesText(account->fileCount));
@@ -105,10 +112,10 @@ float BackupCard(UI::Ui& ui, const char* key, const Rect& r, const Models::Backu
         return h;
     }
     const float pop = SelectionPop(ui, (std::string(key) + "-pop").c_str(), backup->name);
-    float y = body.y + Hero(ui, body, M::Icon::ContentSaveAll, backup->name, backup->DisplayDate(), pop);
+    float y = body.y + Hero(ui, body, M::Icon::ContentSaveAll, backup->DisplayTitle(), backup->DisplayDate(), pop);
     M::Motion::Enter enter(ui, pop, 10.f);
     const float half = (c.w - kChipGap) * 0.5f;
-    InfoChip(ui, { c.x, y, half, kChipH }, M::Icon::Account, Loc::Get("backup_account"), backup->accountId);
+    InfoChip(ui, { c.x, y, half, kChipH }, M::Icon::Account, Loc::Get("backup_account"), backup->AccountDisplay());
     InfoChip(ui, { c.x + half + kChipGap, y, half, kChipH }, M::Icon::FileMultiple, Loc::Get("backup_files"), FilesText(backup->fileCount));
     y += kChipH + kChipGap;
     InfoChip(ui, { c.x, y, c.w, kChipH }, M::Icon::ClockOutline, Loc::Get("backup_created"), backup->TimeAgo());

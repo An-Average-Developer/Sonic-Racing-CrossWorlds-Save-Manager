@@ -350,7 +350,7 @@ void ReportsTab::Send() {
     const std::wstring image = imagePath;
     const bool logs = includeLogs;
     Log::Info(L"Sending a bug report" + std::wstring(logs ? L" with logs.zip" : L""));
-    Async::Run([user, t, d, image, logs] { return Services::Reports::SendBugReport(user.id, user.username, t, d, image, logs ? Log::Zip() : std::string()); },
+    Async::Run([user, t, d, image, logs] { return Services::Reports::SendBugReport(user, t, d, image, logs ? Log::Zip() : std::string()); },
                [this](bool ok) {
         sending = false;
         if (ok) {

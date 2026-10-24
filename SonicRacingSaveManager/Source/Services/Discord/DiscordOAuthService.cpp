@@ -130,7 +130,7 @@ std::optional<User> FetchUser(const std::string& token) {
     const Http::Response r = Http::Get(Config::Discord::ApiUserUrl, { { L"Authorization", L"Bearer " + Text::Widen(token) } }, 10000);
     if (!r.Ok()) return std::nullopt;
     const Json::Value doc = Json::Parse(std::string_view(r.body));
-    User user{ doc["id"].WStr(), doc["username"].WStr() };
+    User user{ doc["id"].WStr(), doc["username"].WStr(), doc["avatar"].OptWStr().value_or(L""), Text::Widen(token) };
     if (user.id.empty()) return std::nullopt;
     return user;
 }
@@ -214,7 +214,7 @@ std::optional<User> LoadCached() {
     bool exists = false;
     const Json::Value doc = Config::ReadJson(Text::Widen(kCacheFile), &exists);
     if (!exists) return std::nullopt;
-    User user{ doc["id"].WStr(), doc["username"].WStr() };
+    User user{ doc["id"].WStr(), doc["username"].WStr(), doc["avatar"].OptWStr().value_or(L""), doc["access_token"].OptWStr().value_or(L"") };
     if (user.id.empty()) return std::nullopt;
     return user;
 }
@@ -223,9 +223,45 @@ void SaveCached(const User& user) {
     Json::Value doc = Json::Value::MakeObject();
     doc.Set("id", user.id);
     doc.Set("username", user.username);
+    doc.Set("avatar", user.avatar);
+    doc.Set("access_token", user.accessToken);
     Config::WriteJson(Text::Widen(kCacheFile), doc);
 }
 
 void ClearCached() { Files::Delete(Paths::DataFile(Text::Widen(kCacheFile))); }
+
+std::wstring AvatarUrl(const User& user, unsigned size, bool animated) {
+    std::wstring hash = user.avatar;
+    const auto lookup = [&](const std::wstring& url, const std::wstring& authorization) {
+        const Http::Response r = Http::Get(url, { { L"Authorization", authorization }, { L"User-Agent", L"SonicRacingSaveManager/1.0" } }, 8000);
+        if (!r.Ok()) return false;
+        const Json::Value doc = Json::Parse(std::string_view(r.body));
+        if (doc["id"].WStr() != user.id) return false;
+        hash = doc["avatar"].OptWStr().value_or(L"");
+        return true;
+    };
+    const bool found = !user.accessToken.empty() && lookup(Config::Discord::ApiUserUrl, L"Bearer " + user.accessToken);
+    if (!found && *Config::Discord::AvatarLookupBotToken)
+        lookup(L"https://discord.com/api/v10/users/" + user.id, std::wstring(L"Bot ") + Config::Discord::AvatarLookupBotToken);
+    if (!hash.empty()) {
+        const bool gif = animated && Text::StartsWith(hash, L"a_");
+        return L"https://cdn.discordapp.com/avatars/" + user.id + L"/" + hash + (gif ? L".gif" : L".png") + L"?size=" + std::to_wstring(size);
+    }
+    unsigned long long id = 0;
+    try {
+        id = std::stoull(user.id);
+    } catch (...) {
+    }
+    return L"https://cdn.discordapp.com/embed/avatars/" + std::to_wstring((id >> 22) % 6) + L".png";
+}
+
+std::wstring AvatarFile(const User& user) { return Files::Combine(Paths::DataDir(), L"Avatars", user.id + L".png"); }
+
+bool DownloadAvatar(const User& user) {
+    if (user.id.empty()) return false;
+    const Http::Response image = Http::Get(AvatarUrl(user, 128), {}, 15000);
+    return image.Ok() && !image.body.empty() && Files::CreateDirectories(Files::Combine(Paths::DataDir(), L"Avatars")) &&
+           Files::WriteBytes(AvatarFile(user), image.body);
+}
 
 } // namespace SonicRacingSaveManager::Services::DiscordOAuth

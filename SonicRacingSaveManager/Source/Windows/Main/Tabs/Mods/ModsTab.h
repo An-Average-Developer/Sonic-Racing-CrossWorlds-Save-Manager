@@ -26,11 +26,16 @@ public:
     void Draw(UI::Ui& ui, const Rect& area) override;
     void OnSelected() override;
     void OnWindowOpened() override;
+    // The Mod Store installed a mod: scan the folder again (when the list was already loaded)
+    void Rescan();
+    // Selects the mod `name` (folder name without the priority) once it's in the list
+    void Select(const std::wstring& name);
 
 private:
     float Stats(UI::Ui& ui, const Rect& r);
     void List(UI::Ui& ui, const Rect& r);
     bool ModRow(UI::Ui& ui, const Rect& r, int index, float dragLift);
+    void ReorderVeil(UI::Ui& ui, const Rect& r);
     float ActionsCard(UI::Ui& ui, const Rect& r, bool draw);
     float PriorityCard(UI::Ui& ui, const Rect& r, bool draw);
 
@@ -45,6 +50,10 @@ private:
     bool dragging = false;
     float dragOffsetY = 0.f;        // mouse y minus the row's top when the drag began
     int dropIndex = -1;             // where the row would land
+
+    // The "Reordering" veil stays a moment even when the renaming is instant
+    unsigned veilReorders = 0;
+    double veilUntil = -10.0;
 };
 
 } // namespace SonicRacingSaveManager::Main

@@ -1,8 +1,12 @@
 #include "Windows/Main/Tabs/Backup/BackupKit.h"
 #include <algorithm>
 #include <cmath>
+#include <map>
+#include <vector>
+#include "Core/Async.h"
 #include "Graphics/Animation.h"
 #include "Localization/Localization.h"
+#include "Services/Backup/SteamAvatars.h"
 #include "UI/Material/Motion.h"
 #include "UI/Material/Theme.h"
 #include "UI/Widgets/ScrollArea.h"
@@ -45,13 +49,22 @@ RowLook RowFrame(UI::Ui& ui, UI::Id id, const Rect& r, bool selected) {
     return look;
 }
 
-// The round badge on the left of a row (the C#'s PackIcon in PrimaryHueMidBrush)
-void Badge(UI::Ui& ui, const RowLook& look, M::Icon icon) {
+// The round badge on the left of a row (the C#'s PackIcon in PrimaryHueMidBrush), or the account's
+// Steam picture in a ring once it's loaded (fading in over the icon)
+void Badge(UI::Ui& ui, const RowLook& look, M::Icon icon, const ImagePtr& picture = nullptr, UI::Id pictureId = 0) {
     const M::Palette& p = M::P();
     const float cx = look.r.x + 34.f, cy = look.r.CY();
     const float s = 1.f + 0.08f * look.hover + 0.15f * look.pulse;
-    ui.g.FillEllipse(cx, cy, 20.f * s, 20.f * s, p.primaryMid.color.Fade(0.16f + 0.14f * look.selected));
-    M::DrawIcon(ui.g, icon, cx, cy, 24.f * s, TabKit::Readable(p.primaryMid.color));
+    const float shown = picture ? ui.Tween(pictureId, 1.f, 0.3f, 0.f) : 0.f;
+    if (shown < 1.f) {
+        ui.g.FillEllipse(cx, cy, 20.f * s, 20.f * s, p.primaryMid.color.Fade(0.16f + 0.14f * look.selected));
+        M::DrawIcon(ui.g, icon, cx, cy, 24.f * s, TabKit::Readable(p.primaryMid.color).Fade(1.f - shown));
+    }
+    if (shown > 0.f) {
+        const float radius = 20.f * s;
+        ui.g.DrawImageRounded(*picture, { cx - radius, cy - radius, radius * 2.f, radius * 2.f }, radius, shown, Stretch::UniformToFill);
+        ui.g.StrokeEllipse(cx, cy, radius + 1.f, radius + 1.f, p.primaryMid.color.Fade((0.35f + 0.5f * look.selected) * shown), 2.f);
+    }
 }
 
 // The count chip and the check on the right of a row; returns where the texts must stop
@@ -122,7 +135,7 @@ float Hint(UI::Ui& ui, const Rect& r, const std::wstring& text, Color color) {
 
 bool AccountRow(UI::Ui& ui, UI::Id id, const Rect& r, const Models::SaveAccount& account, bool selected) {
     const RowLook look = RowFrame(ui, id, r, selected);
-    Badge(ui, look, M::Icon::Account);
+    Badge(ui, look, M::Icon::Account, SteamAvatar(account.accountId), UI::HashId(id, 0xA7A));
     const float right = Trailing(ui, look, FilesText(account.fileCount));
     // The id is the title already when there's no Steam name
     const std::wstring date = Time::Display(account.lastModified);
@@ -133,9 +146,10 @@ bool AccountRow(UI::Ui& ui, UI::Id id, const Rect& r, const Models::SaveAccount&
 
 bool BackupRow(UI::Ui& ui, UI::Id id, const Rect& r, const Models::BackupInfo& backup, const std::wstring& dateText, bool selected) {
     const RowLook look = RowFrame(ui, id, r, selected);
-    Badge(ui, look, M::Icon::ContentSaveAll);
+    // The account's picture once it's loaded, the save icon until then
+    Badge(ui, look, M::Icon::ContentSaveAll, SteamAvatar(backup.accountId), UI::HashId(id, 0xA7A));
     const float right = Trailing(ui, look, FilesText(backup.fileCount));
-    Texts(ui, look, right, backup.name, Loc::Fmt("backup_backup_row", dateText, backup.accountId));
+    Texts(ui, look, right, backup.DisplayTitle(), Loc::Fmt("backup_backup_row", dateText, backup.AccountDisplay()));
     return look.it.clicked;
 }
 
@@ -199,5 +213,33 @@ void InfoChip(UI::Ui& ui, const Rect& r, M::Icon icon, const std::wstring& label
 }
 
 std::wstring FilesText(int count) { return Loc::Fmt(count == 1 ? "files_count_one" : "files_count_many", count); }
+
+ImagePtr SteamAvatar(const std::wstring& accountId) {
+    struct Slot {
+        ImagePtr image;
+        bool requested = false;
+    };
+    static std::map<std::wstring, Slot> avatars;   // UI thread only
+    Slot& slot = avatars[accountId];
+    if (!slot.requested) {
+        slot.requested = true;
+        struct Decoded {
+            unsigned width = 0, height = 0;
+            std::vector<uint32_t> pixels;
+            bool ok = false;
+        };
+        Async::Run(
+            [accountId] {
+                Decoded d;
+                const std::string bytes = Services::SteamAvatars::Fetch(accountId);
+                d.ok = !bytes.empty() && Images::DecodeMemory(bytes, 184, d.width, d.height, d.pixels);
+                return d;
+            },
+            [accountId](Decoded d) {
+                if (d.ok) avatars[accountId].image = Images::FromPixels(d.width, d.height, d.pixels.data());
+            });
+    }
+    return slot.image;
+}
 
 } // namespace SonicRacingSaveManager::Main::BackupKit

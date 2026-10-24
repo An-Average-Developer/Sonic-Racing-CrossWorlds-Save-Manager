@@ -47,4 +47,11 @@ Color ModInfo::UpdateStatusColor() const {
     return hasUpdate ? Argb(0xFFFF6B00) : Argb(0xFF4CAF50);
 }
 
+std::wstring ModInfo::ContentsDisplay() const {
+    std::wstring text;
+    for (const auto& character : characters) text += (text.empty() ? L"" : L", ") + character;
+    for (const char* kind : contentKinds) text += (text.empty() ? L"" : L"  \x00B7  ") + Loc::Get(kind);
+    return text;
+}
+
 } // namespace SonicRacingSaveManager::Models

@@ -21,7 +21,8 @@ using TabKit::PillButton;
 using TabKit::Style;
 
 constexpr float kPad = 20.f, kButtonH = 44.f, kRowGap = 10.f;
-const Color kGreen = Argb(0xFF4CAF50), kOrange = Argb(0xFFFF6B00), kPurple = Argb(0xFF9C27B0), kGrey = Argb(0xFF808080);
+const Color kGreen = Argb(0xFF4CAF50), kOrange = Argb(0xFFFF6B00), kPurple = Argb(0xFF9C27B0), kGrey = Argb(0xFF808080),
+            kRed = Argb(0xFFD32F2F);
 
 void Title(UI::Ui& ui, const Rect& c, const std::wstring& text) {
     TextStyle caps = Style(11.f, DWRITE_FONT_WEIGHT_BOLD);
@@ -43,9 +44,12 @@ float ModsTab::ActionsCard(UI::Ui& ui, const Rect& r, bool draw) {
     Title(ui, c, Loc::Get("mods_actions"));
     float y = c.y + 26.f;
     const float half = (c.w - kRowGap) * 0.5f;
-    if (PillButton(ui, ui.MakeId("md-toggle"), { c.x, y, c.w, kButtonH }, M::Icon::SwapHorizontal, Loc::Get("mods_toggle_selected"), p.primaryMid.color, true,
-                   s.CanToggleMod()))
+    if (PillButton(ui, ui.MakeId("md-toggle"), { c.x, y, half, kButtonH }, M::Icon::SwapHorizontal, Loc::Get("mods_toggle_selected"), p.primaryMid.color,
+                   true, s.CanToggleMod()))
         s.ToggleSelectedMod();
+    if (PillButton(ui, ui.MakeId("md-uninstall"), { c.x + half + kRowGap, y, half, kButtonH }, M::Icon::Delete, Loc::Get("mods_uninstall"), kRed, true,
+                   s.CanUninstallMod()))
+        s.UninstallSelectedMod();
     y += kButtonH + kRowGap;
     if (PillButton(ui, ui.MakeId("md-enable-all"), { c.x, y, half, kButtonH }, M::Icon::CheckAll, Loc::Get("mods_enable_all"), kGreen, true, s.CanEnableAll()))
         s.EnableAllMods();

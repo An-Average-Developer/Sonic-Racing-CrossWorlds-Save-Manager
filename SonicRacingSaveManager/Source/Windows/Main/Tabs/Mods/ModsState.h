@@ -23,6 +23,7 @@ public:
     ModsState(const ModsState&) = delete;
     ModsState& operator=(const ModsState&) = delete;
     void EnsureInitialized();
+    bool Initialized() const { return isInitialized; }
 
     const std::vector<Models::ModInfo>& Mods() const { return mods; }
     std::wstring selectedMod;   // SelectedMod, by name
@@ -32,7 +33,10 @@ public:
     bool isLoading = false;
     bool isPriorityMode = false;
     bool isGameRunning = false;
-    unsigned revision = 0;   // bumped whenever the list is reloaded
+    unsigned revision = 0;   // bumped whenever the list is reloaded (the rows play their entrance again)
+    // The folders are being renamed (a move, priority mode on / off): the list shows "Reordering"
+    bool isReordering = false;
+    unsigned reorders = 0;   // bumped when a reordering starts
 
     int EnabledModCount() const;
     int DisabledModCount() const;
@@ -41,9 +45,12 @@ public:
     std::wstring ModsDirectory() const { return service ? service->ModsDirectory() : L""; }
 
     // ── Commands ──
-    void RefreshMods(std::function<void()> then = {});
+    // `replay`: the rows play their entrance again (not after a reordering: they just slide)
+    void RefreshMods(std::function<void()> then = {}, bool replay = true);
     bool CanToggleMod() const { return SelectedMod() != nullptr && !isGameRunning; }
     void ToggleSelectedMod();
+    bool CanUninstallMod() const { return SelectedMod() != nullptr && !isGameRunning && !isLoading; }
+    void UninstallSelectedMod();
     bool CanEnableAll() const;
     void EnableAllMods();
     bool CanDisableAll() const;
@@ -54,12 +61,12 @@ public:
     bool CanShowUpdateDialog() const { return !isGameRunning; }
     void ShowUpdateDialog(const std::wstring& modName);
     // ModsActions.cpp
-    bool CanTogglePriorityMode() const { return !isGameRunning; }
+    bool CanTogglePriorityMode() const { return !isGameRunning && !isReordering; }
     void TogglePriorityMode();
-    bool CanMove() const { return SelectedMod() != nullptr && isPriorityMode && !isGameRunning; }
+    bool CanMove() const { return SelectedMod() != nullptr && isPriorityMode && !isGameRunning && !isReordering; }
     void MoveModUp();
     void MoveModDown();
-    bool CanDrag() const { return isPriorityMode && !isGameRunning; }
+    bool CanDrag() const { return isPriorityMode && !isGameRunning && !isReordering; }
     void HandleDrop(int droppedIndex, int targetIndex);
 
     // The update card (ModUpdateDialog) is the tab's: it gets the mod and the service, and calls

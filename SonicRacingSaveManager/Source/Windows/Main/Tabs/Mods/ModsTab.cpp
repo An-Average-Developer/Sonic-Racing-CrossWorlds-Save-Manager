@@ -42,6 +42,14 @@ void ModsTab::OnSelected() {
     state->EnsureInitialized();
 }
 
+void ModsTab::Rescan() {
+    if (state && state->Initialized()) state->RefreshMods();
+}
+
+void ModsTab::Select(const std::wstring& name) {
+    if (state) state->selectedMod = name;
+}
+
 void ModsTab::Draw(UI::Ui& ui, const Rect& area) {
     ModsState& s = *state;
     if (loadedAt < 0.0) loadedAt = ui.Time();
@@ -83,6 +91,7 @@ void ModsTab::Draw(UI::Ui& ui, const Rect& area) {
             y += (40.f + 12.f) * lock;
         }
         List(ui, { c.x, y, c.w, c.B() - y });
+        ReorderVeil(ui, { c.x, y, c.w, c.B() - y });
     }
     const float actionsH = ActionsCard(ui, right, false);
     {

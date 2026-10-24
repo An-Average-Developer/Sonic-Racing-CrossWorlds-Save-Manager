@@ -138,7 +138,7 @@ void BackupState::RestoreBackup() {
     const Models::BackupInfo* backup = SelectedBackup();
     if (!backup || busy) return;
     const std::wstring name = backup->name;
-    Dialogs::Message(state.Owner(), Loc::Fmt("backup_restore_confirm", name), Loc::Get("backup_restore_confirm_title"), MessageButtons::YesNo,
+    Dialogs::Message(state.Owner(), Loc::Fmt("backup_restore_confirm", backup->DisplayTitle()), Loc::Get("backup_restore_confirm_title"), MessageButtons::YesNo,
                      MessageIcon::Warning, [this, name](MessageResult result) {
                          if (result != MessageResult::Yes) return;
                          Run<int>(
@@ -157,7 +157,7 @@ void BackupState::RestoreBackupToCustom() {
     const Models::SaveAccount* target = SelectedRestoreAccount();
     if (!backup || !target || busy) return;
     const std::wstring name = backup->name, accountId = target->accountId, display = target->ShortDisplay();
-    Dialogs::Message(state.Owner(), Loc::Fmt("backup_restore_to_confirm", name, display), Loc::Get("backup_restore_confirm_title"),
+    Dialogs::Message(state.Owner(), Loc::Fmt("backup_restore_to_confirm", backup->DisplayTitle(), display), Loc::Get("backup_restore_confirm_title"),
                      MessageButtons::YesNo, MessageIcon::Warning, [this, name, accountId, display](MessageResult result) {
                          if (result != MessageResult::Yes) return;
                          Run<int>(
@@ -175,7 +175,7 @@ void BackupState::DeleteBackup() {
     const Models::BackupInfo* backup = SelectedManageBackup();
     if (!backup || busy) return;
     const std::wstring name = backup->name;
-    Dialogs::Message(state.Owner(), Loc::Fmt("backup_delete_confirm", name), Loc::Get("backup_delete_confirm_title"), MessageButtons::YesNo,
+    Dialogs::Message(state.Owner(), Loc::Fmt("backup_delete_confirm", backup->DisplayTitle()), Loc::Get("backup_delete_confirm_title"), MessageButtons::YesNo,
                      MessageIcon::Warning, [this, name](MessageResult result) {
                          if (result != MessageResult::Yes) return;
                          Run<bool>(

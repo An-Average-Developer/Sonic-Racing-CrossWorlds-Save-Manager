@@ -18,7 +18,9 @@ $Kinds = @(
     'FolderMultiple', 'FolderOpen', 'FormatListNumbered', 'ImagePlus', 'Import', 'Information', 'InformationOutline', 'Link', 'LinkOff',
     'Lock', 'Magnify', 'Memory', 'MenuDown', 'Palette', 'PlusCircle', 'Puzzle', 'Refresh', 'Restore',
     'RestoreAlert', 'Rocket', 'Send', 'ShieldLock', 'Snowflake', 'Star', 'StarCircle', 'Steam', 'SwapHorizontal',
-    'TrendingUp', 'TrophyAward', 'WeatherNight', 'WeatherSunny', 'Web', 'Wrench'
+    'TrendingUp', 'TrophyAward', 'WeatherNight', 'WeatherSunny', 'Web', 'Wrench',
+    # Mod Store
+    'Storefront', 'Heart', 'Eye', 'OpenInNew', 'Sort', 'ImageOff', 'PageNext', 'PagePrevious', 'PackageDown', 'CheckboxMarkedCircle'
 ) | Sort-Object -Unique
 
 $asm = [System.Reflection.Assembly]::LoadFrom($Dll)

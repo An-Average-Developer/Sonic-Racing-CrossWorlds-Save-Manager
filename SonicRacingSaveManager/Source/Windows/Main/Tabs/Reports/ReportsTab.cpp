@@ -173,14 +173,19 @@ float ReportsTab::DiscordCard(UI::Ui& ui, const Rect& r, bool draw) {
             ShowDisconnected();
         }
     } else if (connectedVisible) {
-        // Avatar (first letter), the name, a check badge and a disconnect button
+        // Avatar (the Discord picture, the first letter until it's there), the name, a check badge and
+        // a disconnect button
         ui.g.FillRound(row, 14.f, fg.Fade(0.05f));
         const float ax = row.x + 32.f, ay = row.CY();
         ui.g.FillEllipse(ax, ay, 20.f, 20.f, kDiscord);
-        TextStyle initial = Style(18.f, DWRITE_FONT_WEIGHT_BOLD, false, HAlign::Center);
-        initial.valign = VAlign::Center;
-        const std::wstring letter = username.empty() ? L"?" : std::wstring(1, static_cast<wchar_t>(std::towupper(username[0])));
-        ui.g.Text(letter, { ax - 20.f, ay - 20.f, 40.f, 40.f }, Colors::White, initial);
+        if (auto avatar = avatarPath.empty() ? nullptr : Images::Load(avatarPath, 128)) {
+            ui.g.DrawImageRounded(*avatar, { ax - 20.f, ay - 20.f, 40.f, 40.f }, 20.f, 1.f, Stretch::UniformToFill);
+        } else {
+            TextStyle initial = Style(18.f, DWRITE_FONT_WEIGHT_BOLD, false, HAlign::Center);
+            initial.valign = VAlign::Center;
+            const std::wstring letter = username.empty() ? L"?" : std::wstring(1, static_cast<wchar_t>(std::towupper(username[0])));
+            ui.g.Text(letter, { ax - 20.f, ay - 20.f, 40.f, 40.f }, Colors::White, initial);
+        }
         ui.g.FillEllipse(ax + 15.f, ay + 14.f, 8.f, 8.f, p.cardBackground);
         M::DrawIcon(ui.g, M::Icon::CheckDecagram, ax + 15.f, ay + 14.f, 14.f, Argb(0xFF00C853));
         TextStyle nameStyle = Style(14.f, DWRITE_FONT_WEIGHT_SEMI_BOLD);
@@ -194,6 +199,8 @@ float ReportsTab::DiscordCard(UI::Ui& ui, const Rect& r, bool draw) {
         if (M::IconButton(ui, out, { row.R() - 44.f, ay - 16.f, 32.f, 32.f }, M::Icon::LinkOff, 18.f, M::IconButtonLook(fg.Fade(0.7f)))) {
             OAuth::ClearCached();
             discordUser.reset();
+            avatarPath.clear();
+            avatarFor.clear();
             ShowDisconnected();
         }
         ui.Tooltip(out, Loc::Get("reports_disconnect"));
@@ -315,6 +322,29 @@ void ReportsTab::ShowConnected(const std::wstring& name) {
     connectedVisible = true;
     connectRowVisible = false;
     waitingRowVisible = false;
+    LoadAvatar();
+}
+
+// The last downloaded picture shows right away; the current one is fetched in the background (at
+// most every 5 minutes), so a new Discord avatar shows up on its own
+void ReportsTab::LoadAvatar() {
+    if (!discordUser) return;
+    const OAuth::User user = *discordUser;
+    const std::wstring file = OAuth::AvatarFile(user);
+    if (avatarFor != user.id) {
+        avatarFor = user.id;
+        avatarFetchedAt = 0;
+        avatarPath = Files::Exists(file) ? file : L"";
+    }
+    if (avatarLoading || (avatarFetchedAt && GetTickCount64() - avatarFetchedAt < 5 * 60 * 1000)) return;
+    avatarLoading = true;
+    Async::Run([user] { return OAuth::DownloadAvatar(user); }, [this, user, file](bool ok) {
+        avatarLoading = false;
+        if (!ok || !discordUser || discordUser->id != user.id) return;
+        avatarFetchedAt = GetTickCount64();
+        Images::Forget(file);   // same file name as before: read it again
+        avatarPath = file;
+    });
 }
 
 void ReportsTab::ShowDisconnected() {

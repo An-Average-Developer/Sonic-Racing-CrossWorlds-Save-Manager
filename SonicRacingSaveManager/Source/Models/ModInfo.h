@@ -17,9 +17,14 @@ struct ModInfo {
     int fileCount = 0;
     std::wstring version;              // info.json "version"
     std::wstring modPageUrl;           // info.json "mod_page"
+    std::wstring infoName;             // info.json "name" (the Mod Store matches mods by it)
     bool hasUpdate = false;
     std::wstring latestVersion;
     int priority = -1;                 // -1 means no priority set
+    // What the files change (Services::Mods::ReadModContents): the characters it replaces and the
+    // other kinds of content (translation keys)
+    std::vector<std::wstring> characters;
+    std::vector<const char*> contentKinds;
 
     // "0 KB", "12.5 MB"... ({bytes:0.##} {unit})
     std::wstring FileSizeFormatted() const;
@@ -32,6 +37,8 @@ struct ModInfo {
     // "-", "Update Available", "Up to Date" (translated)
     std::wstring UpdateStatusText() const;
     Color UpdateStatusColor() const;
+    // "Blaze, Storm · Voice", "UI", "" when nothing is known (translated)
+    std::wstring ContentsDisplay() const;
 };
 
 // GameBananaFile — one entry of the API's _aFiles

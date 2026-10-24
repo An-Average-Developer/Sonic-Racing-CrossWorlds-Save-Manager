@@ -91,7 +91,10 @@ void TabBanner(UI::Ui& ui, const Rect& r, const TabBannerSpec& spec, double load
         if (!spec.pillLogo.empty()) {
             if (auto logo = Images::Load(Paths::Asset(spec.pillLogo))) ui.g.DrawImage(*logo, { pill.x + 12.f, pill.CY() - 10.f, 20.f, 20.f }, 1.f);
         } else {
-            M::DrawIcon(ui.g, spec.pillIcon, pill.x + 22.f, pill.CY(), 18.f, spark);
+            // The text's colour with a touch of the accent: the accent alone can be as dark as the
+            // pill (the grey themes) and the icon vanished
+            ui.g.FillEllipse(pill.x + 22.f, pill.CY(), 13.f, 13.f, ink.Fade(0.12f));
+            M::DrawIcon(ui.g, spec.pillIcon, pill.x + 22.f, pill.CY(), 16.f, Lerp(ink, spark, 0.3f));
         }
         ui.g.Text(spec.pill, { pill.x + 40.f, pill.y, pw - 48.f, pill.h }, ink, pillText);
         right = pill.x - 20.f;

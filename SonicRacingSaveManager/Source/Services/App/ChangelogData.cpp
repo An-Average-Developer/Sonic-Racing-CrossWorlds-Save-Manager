@@ -10,6 +10,21 @@ namespace SonicRacingSaveManager::Services::Changelog {
 
 const std::vector<Entry>& Entries() {
     static const std::vector<Entry> entries = {
+        { L"3.0.1", L"[MODS UPDATE!]", {
+            L"## Additions",
+            L"- New Mod Store tab: browse CrossWorlds mods on GameBanana (search, sorting and categories) and install them in one click (zip, 7z, rar), choosing the files when there are several",
+            L"- Mod Store: an info card for every mod with its pictures, description, credits and files; mods you already have show as Installed or Update available",
+            L"- Mod Manager: each mod shows what it replaces next to its name (\x2192 Shadow, \x2192 Blaze \x00B7 Voice...), including styles, guest characters and voice, text, music or UI mods",
+            L"- Mod Manager: an Uninstall button (the mod's folder goes to the Recycle Bin) and a Reinstall button on each mod, which opens it in the Mod Store to replace all its files with the ones you pick",
+            L"- Discord and Steam profile pictures in Reports and in the Backups account lists",
+            L"## Redesigns",
+            L"- The navigation rail groups Backups (Create, Restore, Manage) and Mods (Mod Manager, Mod Store) into one entry each, with a bar to switch sections (Ctrl+Tab)",
+            L"## Changes",
+            L"- Backups show readable names (\"<account>'s backup\" or the name you gave it) and their folders are named \"<name> - <date> <time>\"",
+            L"## Bug Fixes",
+            L"- Reordering the mods no longer makes the list disappear: they slide to their new place while a \"Reordering mods...\" screen shows",
+            L"- Long button texts in other languages now shrink to fit instead of being cut off",
+        } },
         { L"3.0.0", L"[C++ UPDATE!]", {
             L"## Additions",
             L"- The manager has been rewritten from C# (WPF) to C++: it no longer needs .NET installed and is a single exe",

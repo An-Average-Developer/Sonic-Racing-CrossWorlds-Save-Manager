@@ -1,6 +1,7 @@
 #pragma once
 #include <functional>
 #include <string>
+#include "Graphics/Images.h"
 #include "Models/BackupInfo.h"
 #include "Models/SaveAccount.h"
 #include "UI/Material/PackIcon.h"
@@ -51,5 +52,9 @@ float BackupCard(UI::Ui& ui, const char* key, const Rect& r, const Models::Backu
 
 // "{n} file" / "{n} files"
 std::wstring FilesText(int count);
+
+// The Steam profile picture of account `accountId` (its SteamID64): nullptr until it's loaded (in
+// the background, once per run) or when it has none
+ImagePtr SteamAvatar(const std::wstring& accountId);
 
 } // namespace SonicRacingSaveManager::Main::BackupKit

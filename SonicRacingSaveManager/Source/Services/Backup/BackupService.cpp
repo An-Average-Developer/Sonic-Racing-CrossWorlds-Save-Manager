@@ -80,8 +80,27 @@ CreatedBackup BackupService::CreateBackup(const std::wstring& accountId, const s
 
     const Time::Ticks now = Time::Now();
     const std::wstring timestamp = Time::Stamp(now);
-    const bool blank = !customName || Text::Trim(*customName).empty();
-    const std::wstring backupName = blank ? L"backup_" + accountId + L"_" + timestamp : *customName + L"_" + timestamp;
+    // The name is the folder's: without what Windows refuses there ("Abril <3" → "Abril 3")
+    const auto folderSafe = [](const std::wstring& name) {
+        std::wstring out;
+        for (wchar_t c : name)
+            if (c >= 32 && !wcschr(L"<>:\"/\\|?*", c)) out += c;
+        out = Text::Trim(out);
+        while (!out.empty() && out.back() == L'.') out.pop_back();
+        return out;
+    };
+    const std::wstring typed = customName ? Text::Trim(*customName) : L"";
+    // The folder: the typed name, else the Steam account's name (its id when it has none), and when
+    // ("Abril 3 - 2026-10-23 15.23.41"). The lists show the title (backup_info.json) instead.
+    std::wstring base = folderSafe(typed);
+    if (base.empty()) base = folderSafe(account->accountName);
+    if (base.empty()) base = accountId;
+    // Time::Stamp: "20261023_152341"
+    const std::wstring when = timestamp.size() == 15 ? timestamp.substr(0, 4) + L"-" + timestamp.substr(4, 2) + L"-" + timestamp.substr(6, 2) + L" " +
+                                                           timestamp.substr(9, 2) + L"." + timestamp.substr(11, 2) + L"." + timestamp.substr(13, 2)
+                                                     : timestamp;
+    std::wstring backupName = base + L" - " + when;
+    for (int n = 2; Files::DirectoryExists(Files::Combine(backupDir, backupName)); ++n) backupName = base + L" - " + when + L" (" + std::to_wstring(n) + L")";
 
     const std::wstring backupPath = Files::Combine(backupDir, backupName);
     if (!Files::CreateDirectories(backupPath)) throw Error(Loc::Fmt("backup_error_create_folder", backupPath));
@@ -95,6 +114,8 @@ CreatedBackup BackupService::CreateBackup(const std::wstring& accountId, const s
     metadata.accountId = accountId;
     metadata.backupDate = Time::RoundTrip(now);
     metadata.backupName = backupName;
+    metadata.title = typed;   // as typed ("Before the Grand Prix <3"): only the folder needed the clean-up
+    metadata.accountName = account->accountName;
     if (!WriteMetadata(Files::Combine(backupPath, Config::Game::BackupInfoFile), metadata))
         throw Error(Loc::Fmt("backup_error_write", Config::Game::BackupInfoFile));
     return { backupPath, static_cast<int>(metadata.files.size()) };
@@ -103,6 +124,15 @@ CreatedBackup BackupService::CreateBackup(const std::wstring& accountId, const s
 std::vector<Models::BackupInfo> BackupService::ListBackups() const {
     std::vector<Models::BackupInfo> backups;
     if (!Files::DirectoryExists(backupDir)) return backups;
+    // The Steam names of the accounts on this PC, for the backups that don't keep theirs (older ones)
+    std::vector<std::pair<std::wstring, std::wstring>> names;
+    for (const auto& a : GetSaveAccounts())
+        if (!a.accountName.empty()) names.emplace_back(a.accountId, a.accountName);
+    const auto nameOf = [&](const std::wstring& id) {
+        for (const auto& [accountId, name] : names)
+            if (accountId == id) return name;
+        return std::wstring();
+    };
     for (const auto& folder : Files::ListDirectories(backupDir)) {
         const std::wstring metadataFile = Files::Combine(folder, Config::Game::BackupInfoFile);
         if (Files::Exists(metadataFile)) {
@@ -115,6 +145,9 @@ std::vector<Models::BackupInfo> BackupService::ListBackups() const {
             info.name = Files::FileName(folder);
             info.path = folder;
             info.accountId = metadata->accountId;
+            info.accountName = metadata->accountName.empty() ? nameOf(metadata->accountId) : metadata->accountName;
+            info.title = metadata->title;
+            info.autoTitle = metadata->hasTitle && metadata->title.empty();
             info.backupDate = *date;
             info.fileCount = static_cast<int>(metadata->files.size());
             info.files = metadata->files;

@@ -17,6 +17,9 @@ std::optional<Models::BackupMetadata> BackupService::ReadMetadata(const std::wst
     m.backupDate = json["BackupDate"].WStr();
     m.backupName = json["BackupName"].WStr();
     for (const auto& file : json["Files"].Elements()) m.files.push_back(file.WStr());
+    m.hasTitle = json.Has("Title");
+    m.title = json["Title"].WStr();
+    m.accountName = json["AccountName"].WStr();
     return m;
 }
 
@@ -29,6 +32,8 @@ bool BackupService::WriteMetadata(const std::wstring& path, const Models::Backup
     for (const auto& f : metadata.files) files.Push(f);
     json.Set("Files", files);
     json.Set("BackupName", metadata.backupName);
+    json.Set("Title", metadata.title);
+    json.Set("AccountName", metadata.accountName);
     return Files::WriteBytes(path, json.Serialize(true));
 }
 

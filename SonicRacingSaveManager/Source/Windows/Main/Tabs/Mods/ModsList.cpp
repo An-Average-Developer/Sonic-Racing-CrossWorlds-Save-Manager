@@ -3,11 +3,14 @@
 #include <functional>
 #include "Graphics/Animation.h"
 #include "Localization/Localization.h"
+#include "Services/Mods/GameBananaStore.h"
+#include "UI/Material/Buttons.h"
 #include "UI/Material/Elevation.h"
 #include "UI/Material/Motion.h"
 #include "UI/Material/PackIcon.h"
 #include "UI/Material/Theme.h"
 #include "UI/Widgets/ScrollArea.h"
+#include "Windows/Main/MainWindow.h"
 #include "Windows/Main/Tabs/Backup/BackupKit.h"
 #include "Windows/Main/Tabs/Mods/ModsTab.h"
 #include "Windows/Main/Tabs/TabKit.h"
@@ -103,16 +106,42 @@ bool ModsTab::ModRow(UI::Ui& ui, const Rect& r, int index, float dragLift) {
         if (enabled) ui.Tooltip(uid, Loc::Get("mods_update_tooltip"));
         updateClicked = ui2.clicked && enabled;
     }
+    // Reinstall (mods with a GameBanana page): opens its info card in the Mod Store
+    const long long storeId = Services::Mods::Store::ModIdFromUrl(mod.modPageUrl);
+    float nameRight = ur.x;
+    bool reinstallClicked = false;
+    if (storeId > 0) {
+        const Rect br{ ur.x - 8.f - 30.f, rr.CY() - 15.f, 30.f, 30.f };
+        M::ButtonLook look = M::IconButtonLook(fg.Fade(0.7f));
+        look.padding = Edges(0.f);
+        const UI::Id rid = UI::HashId(id, 0x0C);
+        reinstallClicked = M::IconButton(ui, rid, br, M::Icon::Restore, 18.f, look);
+        ui.Tooltip(rid, Loc::Get("mods_reinstall_tooltip"));
+        nameRight = br.x;
+    }
     // Mod Name + version, files and size
     {
-        const float w = std::max(0.f, ur.x - 14.f - x);
+        const float w = std::max(0.f, nameRight - 14.f - x);
         TextStyle name = Style(14.f, DWRITE_FONT_WEIGHT_SEMI_BOLD);
         name.valign = VAlign::Center;
         name.ellipsis = true;
         TextStyle sub = Style(11.5f);
         sub.valign = VAlign::Center;
         sub.ellipsis = true;
-        ui.g.Text(mod.name, { x, rr.y + 13.f, w, 24.f }, fg, name);
+        // What it replaces ("→ Blaze  ·  Voice") follows the name, smaller and in the accent colour;
+        // a long name is cut first, the tag keeps up to half the width
+        const std::wstring contents = mod.ContentsDisplay();
+        float nameW = w;
+        if (!contents.empty()) {
+            TextStyle tag = Style(12.f, DWRITE_FONT_WEIGHT_MEDIUM);
+            tag.valign = VAlign::Center;
+            tag.ellipsis = true;
+            const std::wstring text = L"\x2192 " + contents;
+            const float tagW = std::min(std::ceil(ui.g.Measure(text, tag).w) + 2.f, w * 0.5f);
+            nameW = std::min(std::ceil(ui.g.Measure(mod.name, name).w) + 2.f, std::max(0.f, w - tagW - 10.f));
+            ui.g.Text(text, { x + nameW + 10.f, rr.y + 13.f, std::max(0.f, w - nameW - 10.f), 24.f }, TabKit::Readable(accent).Fade(0.9f), tag);
+        }
+        ui.g.Text(mod.name, { x, rr.y + 13.f, nameW, 24.f }, fg, name);
         const std::wstring details = Loc::Fmt("mods_row_details", mod.VersionDisplay(), BackupKit::FilesText(mod.fileCount), mod.FileSizeFormatted());
         ui.g.Text(details, { x, rr.y + 37.f, w, 20.f }, fg.Fade(0.6f), sub);
     }
@@ -121,6 +150,10 @@ bool ModsTab::ModRow(UI::Ui& ui, const Rect& r, int index, float dragLift) {
 
     if (updateClicked) {
         s.ShowUpdateDialog(mod.name);
+        return false;
+    }
+    if (reinstallClicked) {
+        main.ShowInStore(storeId, mod.infoName.empty() ? mod.name : mod.infoName);
         return false;
     }
     return it.clicked;
@@ -188,11 +221,51 @@ void ModsTab::List(UI::Ui& ui, const Rect& r) {
         const Rect slotR{ r.x, r.y + step * static_cast<float>(dropIndex), w, kRowH };
         ui.g.StrokeRound(slotR.Inset(1.f), 11.f, M::P().primaryMid.color.Fade(0.6f), 2.f);
         const Rect row{ r.x, my - dragOffsetY, w, kRowH };
+        // Its slide starts where it's dropped, not from the place it was picked up
+        ui.SetValue(ui.MakeId("md-row-y", static_cast<int64_t>(std::hash<std::wstring>{}(s.Mods()[static_cast<size_t>(pressedIndex)].name))), row.y);
         ui.PushScale(1.02f, row.CX(), row.CY());
         ModRow(ui, row, pressedIndex, 1.f);
         ui.PopTransform();
     }
     scroll.SetContentSize(count * step - kRowGap);
+}
+
+// Over the list while the folders are renamed: the rows stay visible (dimmed) behind a small card
+// with a spinner, and can't be clicked
+void ModsTab::ReorderVeil(UI::Ui& ui, const Rect& r) {
+    const ModsState& s = *state;
+    if (s.reorders != veilReorders) {
+        veilReorders = s.reorders;
+        veilUntil = ui.Time() + 0.6;
+    }
+    const bool on = s.isReordering || ui.Time() < veilUntil;
+    const float k = Anim::EaseOutCubic(ui.Tween(ui.MakeId("md-veil"), on ? 1.f : 0.f, 0.2f));
+    if (on || k > 0.f) ui.KeepAnimating();
+    if (k <= 0.f) return;
+    const M::Palette& p = M::P();
+    ui.Interact(ui.MakeId("md-veil-block"), r);
+    ui.g.FillRound(r, 12.f, p.cardBackground.Fade(0.55f * k));
+
+    TextStyle title = Style(14.f, DWRITE_FONT_WEIGHT_SEMI_BOLD, false, HAlign::Center);
+    title.valign = VAlign::Center;
+    TextStyle hint = Style(11.5f, DWRITE_FONT_WEIGHT_NORMAL, false, HAlign::Center);
+    hint.valign = VAlign::Center;
+    const std::wstring& text = Loc::Get("mods_reordering");
+    const std::wstring& detail = Loc::Get("mods_reordering_detail");
+    const float cw = std::max({ 260.f, std::ceil(ui.g.Measure(text, title).w) + 60.f, std::ceil(ui.g.Measure(detail, hint).w) + 60.f });
+    const Rect card{ r.CX() - cw * 0.5f, r.CY() - 62.f + 10.f * (1.f - k), cw, 124.f };
+    ui.g.PushOpacity(k);
+    M::Elevation(ui.g, card, 16.f, 8.f);
+    ui.g.FillRound(card, 16.f, p.cardBackground);
+    ui.g.StrokeRound(card.Inset(0.5f), 15.5f, p.primaryMid.color.Fade(0.35f), 1.f);
+    // The spinner, around the reorder icon
+    const float cx = card.CX(), cy = card.y + 38.f;
+    ui.g.FillEllipse(cx, cy, 20.f, 20.f, p.primaryMid.color.Fade(0.12f));
+    TabKit::Arc(ui.g, cx, cy, 20.f, static_cast<float>(ui.Time()) * 360.f, 260.f, p.primaryMid.color, 3.f);
+    M::DrawIcon(ui.g, M::Icon::FormatListNumbered, cx, cy, 18.f, TabKit::Readable(p.primaryMid.color));
+    ui.g.Text(text, { card.x, card.y + 66.f, card.w, 24.f }, p.foreground, title);
+    ui.g.Text(detail, { card.x, card.y + 90.f, card.w, 20.f }, p.foreground.Fade(0.6f), hint);
+    ui.g.PopLayer();
 }
 
 } // namespace SonicRacingSaveManager::Main

@@ -65,7 +65,16 @@ bool PillButton(UI::Ui& ui, UI::Id id, const Rect& r, M::Icon icon, const std::w
     }
     TextStyle label = Style(14.f, DWRITE_FONT_WEIGHT_SEMI_BOLD);
     label.valign = VAlign::Center;
-    const float lw = std::ceil(ui.g.Measure(text, label).w);
+    float lw = std::ceil(ui.g.Measure(text, label).w);
+    // A label too long for the button (a longer language) shrinks to fit, down to 10.5 px; past
+    // that it ends in "…"
+    const float room = r.w - 30.f - 24.f;
+    if (lw > room && room > 0.f) {
+        label = Style(std::max(10.5f, 14.f * room / lw), DWRITE_FONT_WEIGHT_SEMI_BOLD);
+        label.valign = VAlign::Center;
+        label.ellipsis = true;
+        lw = std::min(std::ceil(ui.g.Measure(text, label).w), room);
+    }
     const float cx = r.CX() - (20.f + 10.f + lw) * 0.5f;
     ui.g.PushTransform(D2D1::Matrix3x2F::Rotation(iconAngle, D2D1::Point2F(cx + 10.f, r.CY())) *
                        D2D1::Matrix3x2F::Translation(0.f, -2.f * fb.hover));
@@ -81,7 +90,6 @@ float PillWidth(UI::Ui& ui, const std::wstring& text) {
     TextStyle label = Style(14.f, DWRITE_FONT_WEIGHT_SEMI_BOLD);
     return std::ceil(ui.g.Measure(text, label).w) + 30.f + 48.f;
 }
-
 Color Readable(Color c) { return M::P().baseDark ? Lerp(c, Colors::White, 0.2f) : Lerp(c, Colors::Black, 0.45f); }
 
 float StepsCard(UI::Ui& ui, const Rect& r, const char* key, const std::wstring& title, const std::vector<std::wstring>& steps, double revealAt,

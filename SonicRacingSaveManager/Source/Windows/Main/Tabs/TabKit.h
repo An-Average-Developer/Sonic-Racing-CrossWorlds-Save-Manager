@@ -25,7 +25,6 @@ bool PillButton(UI::Ui& ui, UI::Id id, const Rect& r, UI::Material::Icon icon, c
                 bool enabled = true, float iconAngle = 0.f);
 // Width that fits `text` in a PillButton
 float PillWidth(UI::Ui& ui, const std::wstring& text);
-
 // A colour made readable as text on the current cards (lighter on dark themes, darker on light ones)
 Color Readable(Color c);
 

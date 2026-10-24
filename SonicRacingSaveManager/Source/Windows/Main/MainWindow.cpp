@@ -23,6 +23,7 @@
 #include "Windows/Main/Tabs/Mods/ModsTab.h"
 #include "Windows/Main/Tabs/Reports/ReportsTab.h"
 #include "Windows/Main/Tabs/Steam/SteamTab.h"
+#include "Windows/Main/Tabs/Store/StoreTab.h"
 #include "Windows/Main/Tabs/Tickets/TicketsTab.h"
 #include "Windows/Main/Tabs/Updates/UpdatesTab.h"
 #include "Windows/Splash/LoadingScreen.h"
@@ -50,6 +51,7 @@ MainWindow::MainWindow() {
     tabs[Manage] = std::make_unique<ManageTab>(*this);
     tabs[Tickets] = std::make_unique<TicketsTab>(*this);
     tabs[Mods] = std::make_unique<ModsTab>(*this);
+    tabs[Store] = std::make_unique<StoreTab>(*this);
     tabs[Updates] = std::make_unique<UpdatesTab>(*this);
     tabs[Changelogs] = std::make_unique<ChangelogsTab>(*this);
     tabs[Reports] = std::make_unique<ReportsTab>(*this);
@@ -135,17 +137,47 @@ bool MainWindow::Open() {
     return true;
 }
 
+int MainWindow::GroupOf(int tab) {
+    for (int g = GroupCount - 1; g >= 0; --g)
+        if (tab >= kGroupFirst[g]) return g;
+    return 0;
+}
+
+void MainWindow::SelectGroup(int group) {
+    if (group >= 0 && group < GroupCount) SelectTab(lastInGroup[static_cast<size_t>(group)]);
+}
+
 void MainWindow::SelectTab(int index) {
     if (index == selectedTab || index < 0 || index >= TabCount) return;
     tabs[selectedTab]->OnDeselected();
-    tabDirection = index > selectedTab ? 1.f : -1.f;
-    tabChangedAt = ui.Time();
+    const int from = GroupOf(selectedTab), to = GroupOf(index);
+    if (from == to) {
+        tabDirection = index > selectedTab ? 1.f : -1.f;
+        tabChangedAt = ui.Time();
+    } else {
+        groupDirection = to > from ? 1.f : -1.f;
+        groupChangedAt = ui.Time();
+        tabChangedAt = -10.0;
+    }
+    lastInGroup[static_cast<size_t>(to)] = index;
     selectedTab = index;
-    static const wchar_t* const names[TabCount] = { L"Create Backup", L"Restore", L"Manage", L"Tickets Menu", L"Mod Manager",
-                                                    L"Updates",       L"Changelogs", L"Reports", L"Steam" };
+    static const wchar_t* const names[TabCount] = { L"Create Backup", L"Restore", L"Manage",  L"Tickets Menu", L"Mod Manager",
+                                                    L"Mod Store",     L"Updates", L"Changelogs", L"Reports", L"Steam" };
     Log::Info(std::wstring(L"Tab: ") + names[index]);
     tabs[index]->OnSelected();
     UpdateDiscordPresence();   // MainTabControl_SelectionChanged
+}
+
+void MainWindow::ModsChanged() { static_cast<ModsTab&>(*tabs[Mods]).Rescan(); }
+
+void MainWindow::ShowInModManager(const std::wstring& name) {
+    SelectTab(Mods);
+    static_cast<ModsTab&>(*tabs[Mods]).Select(name);
+}
+
+void MainWindow::ShowInStore(long long id, const std::wstring& name) {
+    SelectTab(Store);
+    static_cast<StoreTab&>(*tabs[Store]).ShowMod(id, name);
 }
 
 void MainWindow::ToggleTheme(const Rect& buttonRect) { themeTransition->Request(buttonRect.CX(), buttonRect.CY()); }
@@ -266,8 +298,16 @@ void MainWindow::DrawMainContent(const Rect& screen) {
     {
         ui.PushClip(layout.content);
         {
-            UI::Material::Motion::Enter enter(ui, UI::Material::Motion::Stagger(ui, tabChangedAt, 0, 0.f, 0.32f), 28.f * tabDirection);
-            tabs[selectedTab]->Draw(ui, layout.content);
+            namespace Motion = UI::Material::Motion;
+            Motion::Enter group(ui, Motion::Stagger(ui, groupChangedAt, 0, 0.f, 0.32f), 28.f * groupDirection);
+            Rect area = layout.content;
+            // A group of several tabs: its bar on top, the tab under it
+            if (kGroupSize[SelectedGroup()] > 1) {
+                SubTabs::Draw(ui, *this, { area.x + 20.f, area.y + 16.f, area.w - 40.f, SubTabs::kHeight });
+                area = { area.x, area.y + SubTabs::kHeight + 8.f, area.w, area.h - SubTabs::kHeight - 8.f };
+            }
+            Motion::Enter tab(ui, Motion::Stagger(ui, tabChangedAt, 0, 0.f, 0.32f), 0.f, 36.f * tabDirection);
+            tabs[selectedTab]->Draw(ui, area);
         }
         ui.PopClip();
     }

@@ -33,12 +33,18 @@ std::string ImageMimeType(const std::wstring& path) {
 
 } // namespace
 
-bool SendBugReport(const std::wstring& discordId, const std::wstring& discordUsername, const std::wstring& title,
-                   const std::wstring& description, const std::wstring& imagePath, const std::string& logsZip) {
+bool SendBugReport(const DiscordOAuth::User& user, const std::wstring& title, const std::wstring& description, const std::wstring& imagePath,
+                   const std::string& logsZip) {
     Json::Value embed = Json::Value::MakeObject();
     Json::Value author = Json::Value::MakeObject();
-    author.Set("name", discordUsername + L"  \x00B7  ID: " + discordId);
+    const std::wstring avatar = DiscordOAuth::AvatarUrl(user, 128, true);
+    author.Set("name", user.username + L"  \x00B7  ID: " + user.id);
+    author.Set("icon_url", avatar);
+    author.Set("url", Config::Discord::UserProfileUrl + user.id);
     embed.Set("author", author);
+    Json::Value thumbnail = Json::Value::MakeObject();
+    thumbnail.Set("url", avatar);
+    embed.Set("thumbnail", thumbnail);
     embed.Set("title", title);
     embed.Set("description", description);
     embed.Set("color", Config::Discord::ReportEmbedColor);

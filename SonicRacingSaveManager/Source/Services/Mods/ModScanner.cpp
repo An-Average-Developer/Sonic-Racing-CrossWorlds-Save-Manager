@@ -1,4 +1,5 @@
 #include <windows.h>
+#include <shellapi.h>
 #include <algorithm>
 #include <climits>
 #include "Core/Files.h"
@@ -6,6 +7,7 @@
 #include "Core/Process.h"
 #include "Core/Text.h"
 #include "Localization/Localization.h"
+#include "Services/Mods/ModContents.h"
 #include "Services/Mods/ModManager.h"
 
 namespace SonicRacingSaveManager::Services::Mods {
@@ -29,12 +31,13 @@ void MoveOrThrow(const std::wstring& from, const std::wstring& to) {
 
 // JsonSerializer.Deserialize<ModInfoJson>: "version" / "mod_page" strings (or null); any other type
 // makes the whole file fail, which the C# caught and ignored
-void ReadInfoJson(const std::wstring& folder, std::wstring& version, std::wstring& modPage) {
+void ReadInfoJson(const std::wstring& folder, std::wstring& version, std::wstring& modPage, std::wstring& name) {
     const auto text = Files::ReadBytes(Files::Combine(folder, L"info.json"));
     if (!text) return;
     bool ok = false;
     const Json::Value json = Json::Parse(std::string_view(*text), &ok);
     if (!ok || !json.IsObject()) return;
+    if (json["name"].IsString()) name = json["name"].WStr();
     const Json::Value& v = json["version"];
     const Json::Value& m = json["mod_page"];
     if ((!v.IsNull() && !v.IsString()) || (!m.IsNull() && !m.IsString())) return;
@@ -77,7 +80,10 @@ std::vector<Models::ModInfo> ModManager::ScanForMods() const {
         mod.fileCount = static_cast<int>(allFiles.size());
         mod.files = std::move(allFiles);
         mod.priority = priority;
-        ReadInfoJson(folder, mod.version, mod.modPageUrl);
+        ReadInfoJson(folder, mod.version, mod.modPageUrl, mod.infoName);
+        ModContents contents = ReadModContents(mod.files);
+        mod.characters = std::move(contents.characters);
+        mod.contentKinds = std::move(contents.kinds);
         mods.push_back(std::move(mod));
     }
     // OrderBy(Priority >= 0 ? Priority : int.MaxValue).ThenBy(Name)
@@ -114,6 +120,18 @@ void ModManager::DisableMod(Models::ModInfo& mod) const {
 void ModManager::ToggleMod(Models::ModInfo& mod) const {
     if (mod.isEnabled) DisableMod(mod);
     else EnableMod(mod);
+}
+
+void ModManager::UninstallMod(const Models::ModInfo& mod) const {
+    if (!Files::DirectoryExists(mod.folderPath)) throw Error(Loc::Fmt("mods_error_directory_not_found", mod.folderPath));
+    // SHFileOperation wants a double-null-terminated list
+    std::wstring from = mod.folderPath;
+    from.push_back(L'\0');
+    SHFILEOPSTRUCTW op{};
+    op.wFunc = FO_DELETE;
+    op.pFrom = from.c_str();
+    op.fFlags = FOF_ALLOWUNDO | FOF_NOCONFIRMATION | FOF_NOERRORUI | FOF_SILENT;
+    if (SHFileOperationW(&op) != 0 || op.fAnyOperationsAborted) throw Error(Loc::Fmt("mods_error_uninstall", mod.name));
 }
 
 void ModManager::OpenModsFolder() const {

@@ -20,33 +20,41 @@ void ModsState::TogglePriorityMode() {
     Dialogs::Message(owner, Loc::Get(disable ? "mods_priority_disable_confirm" : "mods_priority_enable_confirm"),
                      Loc::Get(disable ? "mods_priority_disable_title" : "mods_priority_enable_title"), MessageButtons::YesNo, MessageIcon::Question,
                      [this, disable](MessageResult result) {
-                         if (result != MessageResult::Yes) return;
-                         try {
-                             if (disable) service->DisablePriorityMode(mods);
-                             else service->EnablePriorityMode(mods);
-                             isPriorityMode = !disable;
-                             statusMessage = Loc::Get(disable ? "mods_status_priority_off" : "mods_status_priority_on");
-                             RefreshMods();
-                         } catch (const Mods::Error& e) {
-                             Dialogs::Message(owner, Loc::Fmt("mods_priority_failed", e.Message()), Loc::Get("dialog_error"), MessageButtons::Ok,
-                                              MessageIcon::Error);
-                         }
+                         if (result != MessageResult::Yes || isReordering) return;
+                         isReordering = true;
+                         ++reorders;
+                         const Mods::ModManager copy = *service;
+                         RunOnCopies(
+                             [copy, disable](std::vector<Models::ModInfo>& list, std::wstring&) {
+                                 if (disable) copy.DisablePriorityMode(list);
+                                 else copy.EnablePriorityMode(list);
+                                 return 1;
+                             },
+                             [this, disable](int) {
+                                 isPriorityMode = !disable;
+                                 statusMessage = Loc::Get(disable ? "mods_status_priority_off" : "mods_status_priority_on");
+                                 RefreshMods({}, false);
+                             },
+                             "mods_priority_failed");
                      });
 }
 
-// Mods.Move(from, to) + ReorderMods: the folders are renamed to their new positions
+// Mods.Move(from, to) + ReorderMods: the rows move at once (they slide to their places), the
+// folders are renamed on a worker thread under the list's "Reordering" veil
 void ModsState::Reorder(int from, int to, const std::wstring& status) {
-    try {
-        Models::ModInfo moved = std::move(mods[static_cast<size_t>(from)]);
-        mods.erase(mods.begin() + from);
-        mods.insert(mods.begin() + to, std::move(moved));
-        service->ReorderMods(mods);
-        ++revision;
-        statusMessage = status;
-    } catch (const Mods::Error& e) {
-        Dialogs::Message(owner, Loc::Fmt("mods_move_failed", e.Message()), Loc::Get("dialog_error"), MessageButtons::Ok, MessageIcon::Error);
-        RefreshMods();
-    }
+    if (isReordering) return;
+    Models::ModInfo moved = std::move(mods[static_cast<size_t>(from)]);
+    mods.erase(mods.begin() + from);
+    mods.insert(mods.begin() + to, std::move(moved));
+    isReordering = true;
+    ++reorders;
+    const Mods::ModManager copy = *service;
+    RunOnCopies(
+        [copy](std::vector<Models::ModInfo>& list, std::wstring&) {
+            copy.ReorderMods(list);
+            return 1;
+        },
+        [this, status](int) { statusMessage = status; }, "mods_move_failed");
 }
 
 void ModsState::MoveModUp() {

@@ -31,6 +31,7 @@ private:
     void PickImage();
     void Connect();
     void ShowConnected(const std::wstring& username);
+    void LoadAvatar();   // the connected user's Discord picture (the last downloaded one, then the current one)
     void ShowDisconnected();
     void Send();
     void ShowStatus(const char* messageKey, StatusKind kind);
@@ -41,6 +42,10 @@ private:
     std::wstring username;
     std::optional<Services::DiscordOAuth::User> discordUser;
     std::optional<Async::Cancel> authCancel;
+    // The avatar shown in the identity card (empty: the name's first letter instead)
+    std::wstring avatarPath, avatarFor;
+    bool avatarLoading = false;
+    unsigned long long avatarFetchedAt = 0;   // GetTickCount64 of the last download that worked
 
     std::wstring title, description;
     std::wstring imagePath;

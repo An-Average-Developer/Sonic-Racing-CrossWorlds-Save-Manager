@@ -84,7 +84,7 @@ bool ModsState::ShowGameRunningWarning() {
 
 // ── Scan ────────────────────────────────────────────────────────────────────
 
-void ModsState::RefreshMods(std::function<void()> then) {
+void ModsState::RefreshMods(std::function<void()> then, bool replay) {
     if (!service) {
         statusMessage = Loc::Get("mods_status_not_initialized");
         return;
@@ -92,9 +92,9 @@ void ModsState::RefreshMods(std::function<void()> then) {
     isLoading = true;
     statusMessage = Loc::Get("mods_status_scanning");
     const Mods::ModManager copy = *service;
-    Async::Run([copy] { return copy.ScanForMods(); }, [this, then](std::vector<Models::ModInfo> result) {
+    Async::Run([copy] { return copy.ScanForMods(); }, [this, then, replay](std::vector<Models::ModInfo> result) {
         mods = std::move(result);
-        ++revision;
+        if (replay) ++revision;
         if (!SelectedMod()) selectedMod.clear();
         isPriorityMode = Mods::ModManager::IsPriorityModeEnabled(mods);
         statusMessage = !mods.empty() ? Loc::Fmt("mods_status_found", TotalModCount(), EnabledModCount(), DisabledModCount())
@@ -133,8 +133,13 @@ void ModsState::RunOnCopies(std::function<int(std::vector<Models::ModInfo>&, std
             // The mods changed on disk as far as the work got, failure or not
             mods = std::move(o.mods);
             isLoading = false;
-            if (o.ok) done(o.count);
-            else Fail(errorKey, o.error);
+            isReordering = false;
+            if (o.ok) {
+                done(o.count);
+            } else {
+                Fail(errorKey, o.error);
+                RefreshMods({}, false);   // back in step with the folder
+            }
         });
 }
 
@@ -153,6 +158,35 @@ void ModsState::ToggleSelectedMod() {
         },
         [this, name, wasEnabled](int) { statusMessage = Loc::Fmt(wasEnabled ? "mods_status_disabled_one" : "mods_status_enabled_one", name); },
         "mods_toggle_failed");
+}
+
+// The folder goes to the Recycle Bin; in priority mode the others are renumbered to close the gap
+void ModsState::UninstallSelectedMod() {
+    const Models::ModInfo* mod = SelectedMod();
+    if (!mod || !service) return;
+    if (ShowGameRunningWarning()) return;
+    const std::wstring name = mod->name;
+    Dialogs::Message(owner, Loc::Fmt("mods_uninstall_confirm", name), Loc::Get("mods_uninstall_title"), MessageButtons::YesNo, MessageIcon::Warning,
+                     [this, name](MessageResult result) {
+                         if (result != MessageResult::Yes) return;
+                         statusMessage = Loc::Fmt("mods_status_uninstalling", name);
+                         const Mods::ModManager copy = *service;
+                         const bool renumber = isPriorityMode;
+                         RunOnCopies(
+                             [copy, name, renumber](std::vector<Models::ModInfo>& list, std::wstring&) {
+                                 const auto it = std::find_if(list.begin(), list.end(), [&](const auto& m) { return m.name == name; });
+                                 if (it == list.end()) return 0;
+                                 copy.UninstallMod(*it);
+                                 list.erase(it);
+                                 if (renumber) copy.ReorderMods(list);
+                                 return 1;
+                             },
+                             [this, name](int) {
+                                 selectedMod.clear();
+                                 RefreshMods([this, name] { statusMessage = Loc::Fmt("mods_status_uninstalled", name); });
+                             },
+                             "mods_uninstall_failed");
+                     });
 }
 
 void ModsState::EnableAllMods() {
