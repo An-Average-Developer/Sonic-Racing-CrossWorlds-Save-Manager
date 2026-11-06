@@ -22,6 +22,8 @@ TicketsState::TicketsState(HWND ownerWindow) : owner(ownerWindow) {
 }
 
 TicketsState::~TicketsState() {
+    StopRings();
+    StopSpeed();
     StopUpdateTimer();
     StopAutoAttachTimer();
 }
@@ -56,6 +58,9 @@ void TicketsState::UpdateTimerTick() {
     if (!isAttached) return;
     if (!memoryService.IsProcessRunning()) {
         StopUpdateTimer();
+        StopRings();
+        StopSpeed();
+        medalService.Reset();
         ticketService.Reset();
         memoryService.DetachFromProcess();
         isAttached = false;
@@ -131,6 +136,13 @@ void TicketsState::DetachFromProcess() {
         StopUpdateTimer();
         // Restore the original bytes of whatever patch is on
         ticketService.RestoreAll();
+        medalService.RestoreAll();
+        StopRings();
+        try {
+            speedService.Disable();
+        } catch (const Memory::Error&) {
+        }
+        StopSpeed();
         memoryService.DetachFromProcess();
         isAttached = false;
         ++searchGeneration;
@@ -241,6 +253,108 @@ void TicketsState::ToggleTicketsMultiply500() {
     } catch (const Memory::Error& e) {
         statusMessage = Loc::Fmt("tickets_status_x500_error", e.Message());
         ShowError(Loc::Fmt("tickets_x500_error_message", e.Message()), Loc::Get("dialog_error"));
+    }
+}
+
+// ── Duel Medals ─────────────────────────────────────────────────────────────
+
+void TicketsState::ToggleMedals(MedalMode m) {
+    if (!CanToggleMedals(m)) return;
+    const char* names[] = { "", "freeze", "multiply", "x500" };
+    const std::string name = names[static_cast<int>(m)];
+    try {
+        using MResult = Memory::MedalService::Result;
+        switch (medalService.Toggle(m)) {
+            case MResult::Enabled: statusMessage = Loc::Get("tickets_status_medals_" + name + "_on"); break;
+            case MResult::Disabled: statusMessage = Loc::Get("tickets_status_medals_" + name + "_off"); break;
+            case MResult::EnableFailed:
+            case MResult::DisableFailed:
+                statusMessage = Loc::Get("tickets_status_medals_failed");
+                ShowError(Loc::Get("tickets_medals_failed_message"), Loc::Get("tickets_medals_failed_title"));
+                break;
+        }
+    } catch (const Memory::Error& e) {
+        statusMessage = Loc::Fmt("tickets_status_medals_error", e.Message());
+        ShowError(Loc::Fmt("tickets_medals_error_message", e.Message()), Loc::Get("dialog_error"));
+    }
+}
+
+// ── Max rings ───────────────────────────────────────────────────────────────
+
+void TicketsState::StopRings() {
+    if (ringTimer) Async::CancelTimer(ringTimer);
+    ringTimer = 0;
+    ringService.Reset();
+}
+
+void TicketsState::ToggleMaxRings() {
+    if (!isAttached) return;
+    try {
+        if (ringService.IsOn()) {
+            if (ringTimer) Async::CancelTimer(ringTimer);
+            ringTimer = 0;
+            ringService.Disable();
+            statusMessage = Loc::Get("tickets_status_rings_off");
+            return;
+        }
+        if (!ringService.Enable()) {
+            statusMessage = Loc::Get("tickets_status_rings_failed");
+            ShowError(Loc::Get("tickets_rings_failed_message"), Loc::Get("tickets_rings_failed_title"));
+            return;
+        }
+        ringTimer = Async::Every(100, [this] {
+            try {
+                ringService.Tick();
+            } catch (const Memory::Error&) {
+            }
+        });
+        statusMessage = Loc::Get("tickets_status_rings_on");
+    } catch (const Memory::Error& e) {
+        statusMessage = Loc::Fmt("tickets_status_rings_error", e.Message());
+        ShowError(Loc::Fmt("tickets_rings_error_message", e.Message()), Loc::Get("dialog_error"));
+    }
+}
+
+// ── Top speed ───────────────────────────────────────────────────────────────
+
+void TicketsState::StopSpeed() {
+    if (speedTimer) Async::CancelTimer(speedTimer);
+    speedTimer = 0;
+    speedService.Reset();
+}
+
+void TicketsState::SetSpeedLimit(float kmh) {
+    speedService.SetLimit(kmh);
+    if (speedService.IsOn())
+        statusMessage = kmh >= Memory::SpeedService::kUnlimited ? Loc::Get("tickets_status_speed_unlimited")
+                                                                : Loc::Fmt("tickets_status_speed_on", static_cast<int>(kmh));
+}
+
+void TicketsState::ToggleSpeedLimit() {
+    if (!isAttached) return;
+    try {
+        if (speedService.IsOn()) {
+            if (speedTimer) Async::CancelTimer(speedTimer);
+            speedTimer = 0;
+            speedService.Disable();
+            statusMessage = Loc::Get("tickets_status_speed_off");
+            return;
+        }
+        if (!speedService.Enable()) {
+            statusMessage = Loc::Get("tickets_status_speed_failed");
+            ShowError(Loc::Get("tickets_speed_failed_message"), Loc::Get("tickets_speed_failed_title"));
+            return;
+        }
+        speedTimer = Async::Every(100, [this] {
+            try {
+                speedService.Tick();
+            } catch (const Memory::Error&) {
+            }
+        });
+        SetSpeedLimit(speedService.Limit());
+    } catch (const Memory::Error& e) {
+        statusMessage = Loc::Fmt("tickets_status_speed_error", e.Message());
+        ShowError(Loc::Fmt("tickets_speed_error_message", e.Message()), Loc::Get("dialog_error"));
     }
 }
 

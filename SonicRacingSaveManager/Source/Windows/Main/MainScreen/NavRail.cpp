@@ -25,6 +25,7 @@ struct Item {
 // lines)
 constexpr Item kItems[MainWindow::GroupCount] = {
     { M::Icon::BackupRestore, "rail_backups" },
+    { M::Icon::ContentSaveEdit, "rail_save_editor" },
     { M::Icon::Memory, "rail_tickets" },
     { M::Icon::Puzzle, "rail_mods_group" },
     { M::Icon::CloudDownload, "rail_updates" },

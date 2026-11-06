@@ -30,6 +30,11 @@ bool IsLong(const std::wstring& text) {
 
 Time::Ticks LastWrite(const std::wstring& path) { return Time::FromFileTimeUtc(Files::LastWriteTime(path).value_or(0)); }
 
+// Config::Screenshot: an account left out of the lists
+bool IsHiddenAccount(const std::wstring& name) {
+    return Config::Screenshot::Enabled && !name.empty() && Text::Lower(name).find(Text::Lower(Config::Screenshot::HiddenAccount)) != std::wstring::npos;
+}
+
 } // namespace
 
 BackupService::BackupService() {
@@ -50,6 +55,8 @@ std::vector<Models::SaveAccount> BackupService::GetSaveAccounts() const {
         Models::SaveAccount account;
         account.accountId = dirName;
         account.accountName = GetSteamAccountName(dirName);
+        if (IsHiddenAccount(account.accountName)) continue;
+        if (Config::Screenshot::Enabled) account.accountName = Config::Screenshot::AccountName;
         account.path = dir;
         account.fileCount = static_cast<int>(saveFiles.size());
         account.lastModified = LastWrite(dir);
@@ -78,6 +85,9 @@ CreatedBackup BackupService::CreateBackup(const std::wstring& accountId, const s
     const auto account = std::find_if(accounts.begin(), accounts.end(), [&](const auto& a) { return a.accountId == accountId; });
     if (account == accounts.end()) throw Error(Loc::Fmt("backup_error_account_not_found", accountId));
 
+    // The real Steam name, also in screenshot mode (GetSaveAccounts shows the placeholder)
+    const std::wstring accountName = Config::Screenshot::Enabled ? GetSteamAccountName(accountId) : account->accountName;
+
     const Time::Ticks now = Time::Now();
     const std::wstring timestamp = Time::Stamp(now);
     // The name is the folder's: without what Windows refuses there ("Abril <3" → "Abril 3")
@@ -93,7 +103,7 @@ CreatedBackup BackupService::CreateBackup(const std::wstring& accountId, const s
     // The folder: the typed name, else the Steam account's name (its id when it has none), and when
     // ("Abril 3 - 2026-10-23 15.23.41"). The lists show the title (backup_info.json) instead.
     std::wstring base = folderSafe(typed);
-    if (base.empty()) base = folderSafe(account->accountName);
+    if (base.empty()) base = folderSafe(accountName);
     if (base.empty()) base = accountId;
     // Time::Stamp: "20261023_152341"
     const std::wstring when = timestamp.size() == 15 ? timestamp.substr(0, 4) + L"-" + timestamp.substr(4, 2) + L"-" + timestamp.substr(6, 2) + L" " +
@@ -115,7 +125,7 @@ CreatedBackup BackupService::CreateBackup(const std::wstring& accountId, const s
     metadata.backupDate = Time::RoundTrip(now);
     metadata.backupName = backupName;
     metadata.title = typed;   // as typed ("Before the Grand Prix <3"): only the folder needed the clean-up
-    metadata.accountName = account->accountName;
+    metadata.accountName = accountName;
     if (!WriteMetadata(Files::Combine(backupPath, Config::Game::BackupInfoFile), metadata))
         throw Error(Loc::Fmt("backup_error_write", Config::Game::BackupInfoFile));
     return { backupPath, static_cast<int>(metadata.files.size()) };
@@ -146,6 +156,10 @@ std::vector<Models::BackupInfo> BackupService::ListBackups() const {
             info.path = folder;
             info.accountId = metadata->accountId;
             info.accountName = metadata->accountName.empty() ? nameOf(metadata->accountId) : metadata->accountName;
+            if (Config::Screenshot::Enabled) {
+                if (IsHiddenAccount(metadata->accountName.empty() ? GetSteamAccountName(metadata->accountId) : metadata->accountName)) continue;
+                if (!info.accountName.empty()) info.accountName = Config::Screenshot::AccountName;
+            }
             info.title = metadata->title;
             info.autoTitle = metadata->hasTitle && metadata->title.empty();
             info.backupDate = *date;

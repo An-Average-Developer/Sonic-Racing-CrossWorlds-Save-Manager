@@ -75,7 +75,8 @@ bool PillButton(UI::Ui& ui, UI::Id id, const Rect& r, M::Icon icon, const std::w
         label.ellipsis = true;
         lw = std::min(std::ceil(ui.g.Measure(text, label).w), room);
     }
-    const float cx = r.CX() - (20.f + 10.f + lw) * 0.5f;
+    // (an icon alone sits in the middle)
+    const float cx = text.empty() ? r.CX() - 10.f : r.CX() - (20.f + 10.f + lw) * 0.5f;
     ui.g.PushTransform(D2D1::Matrix3x2F::Rotation(iconAngle, D2D1::Point2F(cx + 10.f, r.CY())) *
                        D2D1::Matrix3x2F::Translation(0.f, -2.f * fb.hover));
     M::DrawIcon(ui.g, icon, cx + 10.f, r.CY(), 20.f, fg);

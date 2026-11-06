@@ -10,6 +10,19 @@ namespace SonicRacingSaveManager::Services::Changelog {
 
 const std::vector<Entry>& Entries() {
     static const std::vector<Entry> entries = {
+        { L"4.0.0", L"[SAVE EDITOR UPDATE!]", {
+            L"## Additions",
+            L"- New Save Editor tab: edit any account's app.sav with the game's own pictures, names and sounds (the account is backed up before every save)",
+            L"- Unlock or lock characters, machines, parts, colours, stickers, horns, auras, gadgets, honor titles, challenges and music, with Unlock all everywhere",
+            L"- Your garage and gadget presets: build machines, change their parts, colour, horn and aura, and fill the gadget plate",
+            L"- Courses: Grand Prix results, Time Trial laps and Red Star Rings at every speed",
+            L"- Profile, currencies and statistics: level, tickets, Duel Medals, race totals and each character's races and wins",
+            L"- Play Missions: see the weekly missions and complete them",
+            L"- Nintendo Switch saves: open the app file of a JKSV backup and get a zip ready to restore on the console",
+            L"- Tickets Menu: Duel Medals (Freeze, Multiply, x500) and Max rings in races (offline)",
+            L"## Compatibility",
+            L"- Updated for Season 2: ticket patches and the new save data",
+        } },
         { L"3.0.1", L"[MODS UPDATE!]", {
             L"## Additions",
             L"- New Mod Store tab: browse CrossWorlds mods on GameBanana (search, sorting and categories) and install them in one click (zip, 7z, rar), choosing the files when there are several",

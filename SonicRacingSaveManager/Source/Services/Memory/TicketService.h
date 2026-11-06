@@ -4,7 +4,7 @@
 // The Freeze / Multiply / x500 toggles of MemoryEditorViewModel.cs (ToggleTicketsFreeze,
 // ToggleTicketsMultiply, ToggleTicketsMultiply500 and the restore on detach), on top of
 // ProcessMemory. Same bytes, same write order. Multiply and x500 patch the same instruction
-// (0x4D830DB), so each one is blocked while the other is on (new in the C++ port: in the C# turning
+// (0x4FC5354), so each one is blocked while the other is on (new in the C++ port: in the C# turning
 // both on mixed their bytes).
 namespace SonicRacingSaveManager::Memory {
 

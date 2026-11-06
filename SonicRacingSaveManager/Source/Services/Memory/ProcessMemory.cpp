@@ -2,6 +2,7 @@
 #include <psapi.h>
 #include <tlhelp32.h>
 #include <algorithm>
+#include <cstdlib>
 #include <cstring>
 #include "Core/Files.h"
 #include "Core/Process.h"
@@ -44,6 +45,7 @@ bool ProcessMemory::Attach(uint32_t pid, const std::wstring& name) {
         return false;
     }
     processName = name;
+    processId = pid;
     attached = true;
     return true;
 }
@@ -64,14 +66,14 @@ bool ProcessMemory::AttachToProcess() {
     return Attach(best, Config::Game::ProcessName);
 }
 
-bool ProcessMemory::AttachToProcess(uint32_t processId) {
+bool ProcessMemory::AttachToProcess(uint32_t pid) {
     // Process.GetProcessById throws for a pid that's gone (caught: false)
-    if (!Process::IsAlive(processId)) {
+    if (!Process::IsAlive(pid)) {
         attached = false;
         return false;
     }
-    const std::wstring name = Files::FileNameWithoutExtension(Process::ImagePath(processId));
-    return Attach(processId, name.empty() ? std::wstring(Config::Game::ProcessName) : name);
+    const std::wstring name = Files::FileNameWithoutExtension(Process::ImagePath(pid));
+    return Attach(pid, name.empty() ? std::wstring(Config::Game::ProcessName) : name);
 }
 
 std::vector<CandidateProcess> ProcessMemory::GetCandidateProcesses() {
@@ -169,6 +171,137 @@ bool ProcessMemory::WriteBytes(int64_t address, const Bytes& bytes) const {
     DWORD ignored = 0;
     VirtualProtectEx(processHandle, target, bytes.size(), oldProtect, &ignored);
     return success;
+}
+
+bool ProcessMemory::WriteCode(int64_t address, const Bytes& bytes) const {
+    ThrowIfNotAttached();
+    LPVOID target = reinterpret_cast<LPVOID>(address);
+    DWORD oldProtect = 0;
+    if (!VirtualProtectEx(processHandle, target, bytes.size(), PAGE_EXECUTE_READWRITE, &oldProtect)) return false;
+    const bool success = WriteProcessMemory(processHandle, target, bytes.data(), bytes.size(), nullptr) != FALSE;
+    DWORD ignored = 0;
+    VirtualProtectEx(processHandle, target, bytes.size(), oldProtect, &ignored);
+    FlushInstructionCache(processHandle, target, bytes.size());
+    return success;
+}
+
+int64_t ProcessMemory::AllocateNearModule(size_t size) const {
+    ThrowIfNotAttached();
+    constexpr uintptr_t kStep = 0x10000;
+    for (uintptr_t distance = kStep; distance < 0x7FF00000; distance += kStep) {
+        if (moduleBase < distance) break;
+        const uintptr_t at = (moduleBase - distance) & ~(kStep - 1);
+        if (LPVOID p = VirtualAllocEx(processHandle, reinterpret_cast<LPVOID>(at), size, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE))
+            return reinterpret_cast<int64_t>(p);
+    }
+    return 0;
+}
+
+bool ProcessMemory::Read(int64_t address, void* out, size_t size) const {
+    ThrowIfNotAttached();
+    SIZE_T read = 0;
+    return ReadProcessMemory(processHandle, reinterpret_cast<LPCVOID>(address), out, size, &read) && read == size;
+}
+
+bool ProcessMemory::Write(int64_t address, const void* data, size_t size) const {
+    ThrowIfNotAttached();
+    SIZE_T written = 0;
+    return WriteProcessMemory(processHandle, reinterpret_cast<LPVOID>(address), data, size, &written) && written == size;
+}
+
+std::vector<int64_t> ProcessMemory::ScanForPointer(uint32_t pid, uint64_t value) {
+    std::vector<int64_t> matches;
+    HANDLE h = OpenProcess(PROCESS_VM_READ | PROCESS_QUERY_INFORMATION, FALSE, pid);
+    if (!h) return matches;
+    std::vector<uint8_t> buffer(ScanChunkSize);
+    MEMORY_BASIC_INFORMATION mbi{};
+    int64_t address = 0;
+    while (VirtualQueryEx(h, reinterpret_cast<LPCVOID>(address), &mbi, sizeof(mbi)) != 0) {
+        const int64_t regionBase = reinterpret_cast<int64_t>(mbi.BaseAddress);
+        const int64_t regionSize = static_cast<int64_t>(mbi.RegionSize);
+        if (regionSize <= 0) break;
+        // Plain read/write pages only: write-combined / uncached ones (GPU mappings) are very slow to read
+        const bool writable = mbi.State == MEM_COMMIT && mbi.Type == MEM_PRIVATE && (mbi.Protect == PAGE_READWRITE || mbi.Protect == PAGE_EXECUTE_READWRITE);
+        if (writable) {
+            for (int64_t offset = 0; offset < regionSize; offset += ScanChunkSize) {
+                const SIZE_T toRead = static_cast<SIZE_T>(std::min<int64_t>(ScanChunkSize, regionSize - offset));
+                SIZE_T bytesRead = 0;
+                if (!ReadProcessMemory(h, reinterpret_cast<LPCVOID>(regionBase + offset), buffer.data(), toRead, &bytesRead)) continue;
+                const auto* q = reinterpret_cast<const uint64_t*>(buffer.data());
+                for (SIZE_T i = 0; i < bytesRead / 8; ++i)
+                    if (q[i] == value) matches.push_back(regionBase + offset + static_cast<int64_t>(i * 8));
+            }
+        }
+        address = regionBase + regionSize;
+    }
+    CloseHandle(h);
+    return matches;
+}
+
+int64_t ProcessMemory::FindQwordInModule(uint64_t value) const {
+    ThrowIfNotAttached();
+    std::vector<uint8_t> buffer;
+    MEMORY_BASIC_INFORMATION mbi{};
+    int64_t address = static_cast<int64_t>(moduleBase);
+    while (VirtualQueryEx(processHandle, reinterpret_cast<LPCVOID>(address), &mbi, sizeof(mbi)) != 0 &&
+           reinterpret_cast<uintptr_t>(mbi.AllocationBase) == moduleBase) {
+        const int64_t regionBase = reinterpret_cast<int64_t>(mbi.BaseAddress);
+        const size_t regionSize = mbi.RegionSize;
+        const bool data = mbi.State == MEM_COMMIT && (mbi.Protect & (PAGE_READONLY | PAGE_READWRITE | PAGE_WRITECOPY)) != 0;
+        if (data) {
+            buffer.resize(regionSize);
+            SIZE_T read = 0;
+            if (ReadProcessMemory(processHandle, reinterpret_cast<LPCVOID>(regionBase), buffer.data(), regionSize, &read)) {
+                const auto* q = reinterpret_cast<const uint64_t*>(buffer.data());
+                for (SIZE_T i = 0; i < read / 8; ++i)
+                    if (q[i] == value) return regionBase + static_cast<int64_t>(i * 8);
+            }
+        }
+        address = regionBase + static_cast<int64_t>(regionSize);
+    }
+    return 0;
+}
+
+int64_t ProcessMemory::FindPattern(const char* pattern) const {
+    ThrowIfNotAttached();
+    // "48 8B ?? 05" -> bytes + mask
+    std::vector<int> bytes;
+    for (const char* c = pattern; *c;) {
+        if (*c == ' ') { ++c; continue; }
+        if (c[0] == '?') {
+            bytes.push_back(-1);
+            c += c[1] == '?' ? 2 : 1;
+            continue;
+        }
+        bytes.push_back(static_cast<int>(std::strtol(std::string(c, 2).c_str(), nullptr, 16)));
+        c += 2;
+    }
+    if (bytes.empty()) return 0;
+
+    std::vector<uint8_t> buffer;
+    MEMORY_BASIC_INFORMATION mbi{};
+    int64_t address = static_cast<int64_t>(moduleBase);
+    while (VirtualQueryEx(processHandle, reinterpret_cast<LPCVOID>(address), &mbi, sizeof(mbi)) != 0 &&
+           reinterpret_cast<uintptr_t>(mbi.AllocationBase) == moduleBase) {
+        const int64_t regionBase = reinterpret_cast<int64_t>(mbi.BaseAddress);
+        const size_t regionSize = mbi.RegionSize;
+        const bool code = mbi.State == MEM_COMMIT && (mbi.Protect & (PAGE_EXECUTE_READ | PAGE_EXECUTE_READWRITE)) != 0;
+        if (code && regionSize >= bytes.size()) {
+            buffer.resize(regionSize);
+            SIZE_T read = 0;
+            if (ReadProcessMemory(processHandle, reinterpret_cast<LPCVOID>(regionBase), buffer.data(), regionSize, &read) && read >= bytes.size()) {
+                const int first = bytes[0];
+                for (size_t i = 0; i + bytes.size() <= read; ++i) {
+                    if (first >= 0 && buffer[i] != first) continue;
+                    size_t j = 1;
+                    while (j < bytes.size() && (bytes[j] < 0 || buffer[i + j] == bytes[j])) ++j;
+                    if (j == bytes.size()) return regionBase + static_cast<int64_t>(i);
+                }
+            }
+        }
+        address = regionBase + static_cast<int64_t>(regionSize);
+    }
+    return 0;
 }
 
 } // namespace SonicRacingSaveManager::Memory

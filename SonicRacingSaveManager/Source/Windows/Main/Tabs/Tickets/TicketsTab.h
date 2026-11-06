@@ -34,7 +34,7 @@ public:
     void OnWindowOpened() override;
 
 private:
-    static constexpr int kSections = 2;
+    static constexpr int kSections = 4;
     struct Section {
         std::wstring title;
         UI::Material::Icon icon;
@@ -53,6 +53,8 @@ private:
     void Rail(UI::Ui& ui, const Rect& r, const Section* sections, int current);
     std::vector<TicketsKit::ToolSpec> PatchTools(UI::Ui& ui);
     std::vector<TicketsKit::ToolSpec> EditorTools(UI::Ui& ui);
+    std::vector<TicketsKit::ToolSpec> MedalTools(UI::Ui& ui);
+    std::vector<TicketsKit::ToolSpec> RaceTools(UI::Ui& ui);
     // Editor view
     void FindTicketsCard(UI::Ui& ui, const Rect& r);
     void EditValueCard(UI::Ui& ui, const Rect& r);
@@ -72,6 +74,7 @@ private:
     float lastScroll = 0.f, lastMaxScroll = 0.f;
     std::array<float, kSections> sectionTop{};
     int scrollToSection = -1;
+    int konamiStep = 0;       // the Konami code shows Top speed in races
     float pickerOpen = 0.f;   // manual process picker (Auto-Attach off), animated once per frame
 };
 

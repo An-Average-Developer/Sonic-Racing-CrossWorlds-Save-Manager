@@ -2,6 +2,7 @@
 #include <cmath>
 #include "Graphics/Animation.h"
 #include "Localization/Localization.h"
+#include "Services/SaveFile/AppSave.h"
 #include "UI/Material/Card.h"
 #include "UI/Material/Motion.h"
 #include "UI/Material/PackIcon.h"
@@ -25,6 +26,8 @@ using TabKit::Style;
 constexpr float kRailW = 236.f;
 constexpr float kItemH = 54.f, kItemGap = 4.f;
 const Color kGreen = Argb(0xFF4CAF50);
+// The patches' action discs: Freeze / Multiply / x500
+const Color kFreezeTone = Argb(0xFF29B6F6), kMultiplyTone = Argb(0xFF43A047), kX500Tone = Argb(0xFF8E24AA);
 
 } // namespace
 
@@ -42,6 +45,8 @@ void TicketsTab::MenuView(UI::Ui& ui, const Rect& area) {
     Section sections[kSections] = {
         { Loc::Get("tickets_cat_patches"), M::Icon::Flash, PatchTools(ui) },
         { Loc::Get("tickets_cat_editor"), M::Icon::Counter, EditorTools(ui) },
+        { Loc::Get("tickets_cat_medals"), M::Icon::Medal, MedalTools(ui) },
+        { Loc::Get("tickets_cat_race"), M::Icon::FlagCheckered, RaceTools(ui) },
     };
     bool shown[kSections] = {};
     int firstShown = -1, lastShown = -1;
@@ -222,6 +227,10 @@ std::vector<K::ToolSpec> TicketsTab::PatchTools(UI::Ui& ui) {
         K::ToolSpec t;
         t.key = key;
         t.icon = icon;
+        t.image = L"Tickets.png";
+        t.hasAction = true;
+        t.actionIcon = icon;
+        t.actionTone = icon == M::Icon::Snowflake ? kFreezeTone : icon == M::Icon::TrendingUp ? kMultiplyTone : kX500Tone;
         t.title = Loc::Get(title);
         t.subtitle = locked ? Loc::Get(lockedNote) : Loc::Get(hint);
         t.active = on;
@@ -288,6 +297,120 @@ std::vector<K::ToolSpec> TicketsTab::EditorTools(UI::Ui& ui) {
         };
         tools.push_back(std::move(t));
     }
+    return tools;
+}
+
+// The Duel Medal patches: Freeze / Multiply / x500 patch the same instruction, so while one is on the
+// other two lock
+std::vector<K::ToolSpec> TicketsTab::MedalTools(UI::Ui& ui) {
+    TicketsState& s = *state;
+    using Mode = TicketsState::MedalMode;
+    std::vector<K::ToolSpec> tools;
+    const auto Patch = [&](const char* key, M::Icon icon, Mode mode, const char* name, const wchar_t* words) {
+        const std::string base = std::string("tickets_medals_") + name;
+        const bool on = s.IsMedals(mode), can = s.CanToggleMedals(mode);
+        const bool locked = s.isAttached && !can;
+        K::ToolSpec t;
+        t.key = key;
+        t.icon = icon;
+        t.image = L"GameImages\\currency\\medals.png";
+        t.hasAction = true;
+        t.actionIcon = icon;
+        t.actionTone = mode == Mode::Freeze ? kFreezeTone : mode == Mode::Multiply ? kMultiplyTone : kX500Tone;
+        t.title = Loc::Get(base);
+        t.subtitle = locked ? Loc::Get("tickets_medals_locked") : Loc::Get(base + "_hint");
+        t.active = on;
+        t.search = words;
+        t.trailing = K::SwitchRow(ui, ui.MakeId(std::string(key) + "-switch"), on, can, [&s, mode] { s.ToggleMedals(mode); }, locked,
+                                  Loc::Get(s.isAttached ? base + "_tooltip" : "tickets_patches_attach_first"));
+        tools.push_back(std::move(t));
+    };
+    Patch("tk-medals-freeze", M::Icon::Snowflake, Mode::Freeze, "freeze", L"duel medals freeze unlimited medallas");
+    Patch("tk-medals-multiply", M::Icon::TrendingUp, Mode::Multiply, "multiply", L"duel medals multiply medallas");
+    Patch("tk-medals-x500", M::Icon::Rocket, Mode::Multiply500, "x500", L"duel medals multiply 500 medallas");
+    return tools;
+}
+
+// In-race tools: Max rings (racer 0 only, so the CPU racers keep theirs)
+std::vector<K::ToolSpec> TicketsTab::RaceTools(UI::Ui& ui) {
+    TicketsState& s = *state;
+    std::vector<K::ToolSpec> tools;
+    K::ToolSpec t;
+    t.key = "tk-rings";
+    t.image = L"Ring.png";
+    t.title = Loc::Get("tickets_rings");
+    t.subtitle = Loc::Get("tickets_rings_hint");
+    t.active = s.IsMaxRings();
+    t.search = L"rings max race speed anillos monedas";
+    t.trailing = K::SwitchRow(ui, ui.MakeId("tk-rings-switch"), s.IsMaxRings(), s.CanToggleMaxRings(), [&s] { s.ToggleMaxRings(); }, false,
+                              Loc::Get(s.isAttached ? "tickets_rings_tooltip" : "tickets_patches_attach_first"));
+    tools.push_back(std::move(t));
+
+    // Top speed (a Konami code extra): the player's own top speed set to a preset, a value picked with
+    // - / +, or unlimited
+    if (!Services::SaveFile::KonamiExtras() && !s.IsSpeedLimit()) return tools;
+    K::ToolSpec v;
+    v.key = "tk-speed";
+    v.icon = M::Icon::Rocket;
+    v.title = Loc::Get("tickets_speed");
+    const bool on = s.IsSpeedLimit();
+    const float limit = s.SpeedLimit();
+    const bool unlimited = limit >= Memory::SpeedService::kUnlimited;
+    if (on && s.PlayerTopSpeed() > 0.f) {
+        v.subtitle = Loc::Fmt("tickets_speed_live", static_cast<int>(std::lround(s.PlayerSpeed())), static_cast<int>(std::lround(s.PlayerTopSpeed())));
+        ui.KeepAnimatingThrottled();   // the live speed
+    } else if (s.SearchingSpeed()) {
+        v.subtitle = Loc::Get("tickets_speed_searching");
+        ui.KeepAnimatingThrottled();
+    } else {
+        v.subtitle = Loc::Get("tickets_speed_hint");
+        if (on) ui.KeepAnimatingThrottled();
+    }
+    v.active = on;
+    v.wide = true;
+    v.search = L"speed limit top velocidad maxima";
+    v.trailing = K::SwitchRow(ui, ui.MakeId("tk-speed-switch"), on, s.CanToggleSpeedLimit(), [&s] { s.ToggleSpeedLimit(); }, false,
+                              Loc::Get(s.isAttached ? "tickets_speed_tooltip" : "tickets_patches_attach_first"));
+    v.details = [&ui, &s, limit, unlimited](float width) {
+        K::Rows rows;
+        K::Row row;
+        row.height = 36.f;
+        row.margin = Edges{ 0.f, 4.f, 0.f, 0.f };
+        row.draw = [&ui, &s, limit, unlimited, width](const Rect& r) {
+            const M::Palette& p = M::P();
+            const Color tone = p.primaryMid.color;
+            float x = r.x;
+            // - value +
+            const float step = 10.f;
+            if (TabKit::PillButton(ui, ui.MakeId("tk-speed-minus"), { x, r.y, 36.f, 36.f }, M::Icon::ChevronLeft, L"", tone, false, !unlimited && limit > 50.f))
+                s.SetSpeedLimit(std::max(50.f, limit - step));
+            x += 40.f;
+            TextStyle value = Style(15.f, DWRITE_FONT_WEIGHT_BOLD, false, HAlign::Center);
+            value.valign = VAlign::Center;
+            ui.g.Text(unlimited ? Loc::Get("tickets_speed_unlimited") : Loc::Fmt("tickets_speed_kmh", static_cast<int>(limit)), { x, r.y, 96.f, 36.f },
+                      p.foreground, value);
+            x += 100.f;
+            if (TabKit::PillButton(ui, ui.MakeId("tk-speed-plus"), { x, r.y, 36.f, 36.f }, M::Icon::ChevronRight, L"", tone, false, !unlimited && limit < 990.f))
+                s.SetSpeedLimit(std::min(990.f, limit + step));
+            x += 52.f;
+            // Presets
+            const float presets[] = { 250.f, 300.f, 400.f, 500.f, Memory::SpeedService::kUnlimited };
+            for (int i = 0; i < 5; ++i) {
+                const bool isUnlimited = i == 4;
+                const std::wstring label = isUnlimited ? Loc::Get("tickets_speed_unlimited") : std::to_wstring(static_cast<int>(presets[i]));
+                const float w = std::max(56.f, TabKit::PillWidth(ui, label));
+                if (x + w > r.x + width) break;
+                const bool picked = limit == presets[i];
+                if (TabKit::PillButton(ui, ui.MakeId("tk-speed-preset", i), { x, r.y, w, 36.f }, isUnlimited ? M::Icon::Rocket : M::Icon::Flash, label, tone,
+                                       picked, !picked))
+                    s.SetSpeedLimit(presets[i]);
+                x += w + 6.f;
+            }
+        };
+        rows.push_back(std::move(row));
+        return rows;
+    };
+    tools.push_back(std::move(v));
     return tools;
 }
 

@@ -302,6 +302,14 @@ float ToolGrid(UI::Ui& ui, float x, float y, float w, std::vector<ToolSpec>& too
                 } else {
                     M::DrawIcon(ui.g, spec.icon, bcx, bcy, 26.f * scale, Lerp(fg, p.primaryMid.foreground, on));
                 }
+                if (spec.hasAction) {
+                    // The action disc: a ring in the card's colour cuts it out of the badge; it glows while on
+                    const float ar = 10.5f * scale, ax = bcx + radius * 0.62f, ay = bcy + radius * 0.62f;
+                    if (on > 0.f) ui.g.FillEllipse(ax, ay, ar + 5.f, ar + 5.f, spec.actionTone.Fade(0.28f * on));
+                    ui.g.FillEllipse(ax, ay, ar + 2.f, ar + 2.f, p.cardBackground);
+                    ui.g.FillEllipse(ax, ay, ar, ar, spec.actionTone);
+                    M::DrawIcon(ui.g, spec.actionIcon, ax, ay, 13.f * scale, Argb(0xFFFFFFFF));
+                }
                 ui.g.PopTransform();
 
                 // Trailing control

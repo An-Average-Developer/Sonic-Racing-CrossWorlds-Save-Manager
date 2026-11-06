@@ -34,6 +34,11 @@ struct ToolSpec {
     std::string key;                    // id seed (stable per tool)
     UI::Material::Icon icon = UI::Material::Icon::Star;
     std::wstring image;                 // picture in the badge instead of the icon (relative to Assets)
+    // A small coloured disc at the badge's lower right with what the tool does (the patches: a
+    // snowflake for Freeze, an arrow for Multiply, a rocket for x500) over the currency's picture
+    bool hasAction = false;
+    UI::Material::Icon actionIcon = UI::Material::Icon::Star;
+    Color actionTone;
     std::wstring title, subtitle;
     bool visible = true;
     bool counted = true;                // counts as a tool (the guide tile doesn't)

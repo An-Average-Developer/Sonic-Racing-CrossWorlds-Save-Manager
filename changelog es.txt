@@ -1,17 +1,13 @@
-3.0.1
+4.0.0
 ## Novedades
-Nueva pestaña Mod Store: explora los mods de CrossWorlds en GameBanana (búsqueda, orden y categorías) e instálalos con un clic (zip, 7z, rar), eligiendo los archivos cuando hay varios
-Mod Store: una ficha para cada mod con sus imágenes, descripción, créditos y archivos; los mods que ya tienes aparecen como Instalado o Actualización disponible
-Mod Manager: cada mod muestra lo que reemplaza junto a su nombre (→ Shadow, → Blaze · Voz...), incluidos estilos, personajes invitados y mods de voces, textos, música o interfaz
-Mod Manager: un botón Desinstalar (la carpeta del mod va a la Papelera de reciclaje) y un botón Reinstalar en cada mod, que lo abre en la Mod Store para reemplazar todos sus archivos por los que elijas
-Fotos de perfil de Discord y Steam en Reports y en las listas de cuentas de las copias de seguridad
+Nueva pestaña Save Editor: edita el app.sav de cualquier cuenta con las imágenes, nombres y sonidos del propio juego (se hace una copia de la cuenta antes de cada guardado)
+Desbloquea o bloquea personajes, máquinas, piezas, colores, pegatinas, bocinas, auras, gadgets, títulos, desafíos y música, con Desbloquear todo en cada sección
+Tu garaje y tus presets de gadgets: crea máquinas, cambia sus piezas, color, bocina y aura, y rellena la placa de gadgets (también la ranura especial de la Temporada 2)
+Circuitos: resultados del Grand Prix, vueltas de Contrarreloj y Red Star Rings en todas las velocidades
+Perfil, monedas y estadísticas: nivel, tickets, Duel Medals, totales de carreras y las carreras y victorias de cada personaje
+Misiones: mira las misiones semanales y complétalas
+Saves de Nintendo Switch: abre el archivo app de una copia de JKSV y obtén un zip listo para restaurar en la consola
+Menú de Tickets: Duel Medals (Congelar, Multiplicar, x500) y anillos al máximo en carreras (offline)
 
-## Rediseños
-La barra de navegación agrupa las copias de seguridad (Crear, Restaurar, Gestionar) y los mods (Mod Manager, Mod Store) en una entrada cada uno, con una barra para cambiar de sección (Ctrl+Tab)
-
-## Cambios
-Las copias de seguridad muestran nombres legibles ("Copia de <cuenta>" o el nombre que le pusiste) y sus carpetas se llaman "<nombre> - <fecha> <hora>"
-
-## Correcciones
-Reordenar los mods ya no hace desaparecer la lista: se deslizan a su nuevo sitio mientras se muestra una pantalla de "Reordenando mods..."
-Los textos largos de los botones en otros idiomas ahora se reducen para caber en vez de cortarse
+## Compatibilidad
+Actualizado para la Temporada 2: parches de tickets y los nuevos datos del save

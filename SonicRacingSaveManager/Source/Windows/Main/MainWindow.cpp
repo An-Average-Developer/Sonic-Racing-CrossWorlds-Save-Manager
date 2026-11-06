@@ -22,6 +22,7 @@
 #include "Windows/Main/Tabs/Changelogs/ChangelogsTab.h"
 #include "Windows/Main/Tabs/Mods/ModsTab.h"
 #include "Windows/Main/Tabs/Reports/ReportsTab.h"
+#include "Windows/Main/Tabs/SaveEditor/SaveEditorTab.h"
 #include "Windows/Main/Tabs/Steam/SteamTab.h"
 #include "Windows/Main/Tabs/Store/StoreTab.h"
 #include "Windows/Main/Tabs/Tickets/TicketsTab.h"
@@ -49,6 +50,7 @@ MainWindow::MainWindow() {
     tabs[CreateBackup] = std::make_unique<CreateBackupTab>(*this);
     tabs[Restore] = std::make_unique<RestoreTab>(*this);
     tabs[Manage] = std::make_unique<ManageTab>(*this);
+    tabs[SaveEditor] = std::make_unique<SaveEditorTab>(*this);
     tabs[Tickets] = std::make_unique<TicketsTab>(*this);
     tabs[Mods] = std::make_unique<ModsTab>(*this);
     tabs[Store] = std::make_unique<StoreTab>(*this);
@@ -161,8 +163,8 @@ void MainWindow::SelectTab(int index) {
     }
     lastInGroup[static_cast<size_t>(to)] = index;
     selectedTab = index;
-    static const wchar_t* const names[TabCount] = { L"Create Backup", L"Restore", L"Manage",  L"Tickets Menu", L"Mod Manager",
-                                                    L"Mod Store",     L"Updates", L"Changelogs", L"Reports", L"Steam" };
+    static const wchar_t* const names[TabCount] = { L"Create Backup", L"Restore",  L"Manage",     L"Save Editor", L"Tickets Menu", L"Mod Manager",
+                                                    L"Mod Store",     L"Updates",  L"Changelogs", L"Reports",     L"Steam" };
     Log::Info(std::wstring(L"Tab: ") + names[index]);
     tabs[index]->OnSelected();
     UpdateDiscordPresence();   // MainTabControl_SelectionChanged

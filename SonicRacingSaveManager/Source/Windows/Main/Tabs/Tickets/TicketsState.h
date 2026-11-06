@@ -7,6 +7,9 @@
 #include "Core/Async.h"
 #include "Models/MemoryValue.h"
 #include "Services/Memory/ProcessMemory.h"
+#include "Services/Memory/MedalService.h"
+#include "Services/Memory/RingService.h"
+#include "Services/Memory/SpeedService.h"
 #include "Services/Memory/TicketService.h"
 
 namespace SonicRacingSaveManager::Main {
@@ -58,6 +61,24 @@ public:
     void ToggleTicketsFreeze();
     void ToggleTicketsMultiply();
     void ToggleTicketsMultiply500();
+    // Duel Medal patches (MedalService): Freeze / Multiply / x500, one at a time (same instruction)
+    using MedalMode = Memory::MedalService::Mode;
+    bool IsMedals(MedalMode m) const { return medalService.Current() == m; }
+    bool CanToggleMedals(MedalMode m) const { return isAttached && medalService.CanToggle(m); }
+    void ToggleMedals(MedalMode m);
+    // Max rings in races (RingService): racer 0 kept at 100 rings every 100 ms while on
+    bool IsMaxRings() const { return ringService.IsOn(); }
+    bool CanToggleMaxRings() const { return isAttached; }
+    void ToggleMaxRings();
+    // Top speed in races (SpeedService): the player's top speed kept at SpeedLimit() while on
+    bool IsSpeedLimit() const { return speedService.IsOn(); }
+    bool CanToggleSpeedLimit() const { return isAttached; }
+    void ToggleSpeedLimit();
+    float SpeedLimit() const { return speedService.Limit(); }
+    void SetSpeedLimit(float kmh);
+    float PlayerSpeed() const { return speedService.SpeedKmh(); }
+    float PlayerTopSpeed() const { return speedService.TopKmh(); }
+    bool SearchingSpeed() const { return speedService.Searching(); }
 
     // ── Find Tickets (TicketsSearch.cpp) ──
     // 1 = go to Friendship, 2 = type tickets + Search, 3 = go to Customize Machine, 4 = back to
@@ -88,12 +109,19 @@ private:
     void StopAutoAttachTimer();
     void UpdateTimerTick();
     void TryAutoAttach();
+    void StopRings();
+    void StopSpeed();
     void ShowError(const std::wstring& text, const std::wstring& title);
     void SetTicketAddress(int64_t address) { tickets.address = address; }
 
     HWND owner;
     Memory::ProcessMemory memoryService;
     Memory::TicketService ticketService{ memoryService };
+    Memory::MedalService medalService{ memoryService };
+    Memory::RingService ringService{ memoryService };
+    Async::TimerId ringTimer = 0;
+    Memory::SpeedService speedService{ memoryService };
+    Async::TimerId speedTimer = 0;
     std::optional<std::vector<int64_t>> ticketCandidates;
     Async::TimerId updateTimer = 0, autoAttachTimer = 0;
     // Bumped on detach: a search finishing after it is ignored

@@ -26,8 +26,8 @@
        (AppVersion::BuildDefaultTheme). All false = classic. Sonic has a single icon for every mode. -->
   <PropertyGroup Label="AppInfo">
     <SummerMode>false</SummerMode>
-    <HalloweenMode>true</HalloweenMode>
-    <ChristmasMode>false</ChristmasMode>
+    <HalloweenMode>false</HalloweenMode>
+    <ChristmasMode>true</ChristmasMode>
     <ModeDefines></ModeDefines>
     <ModeDefines Condition="'$(SummerMode)' == 'true'">$(ModeDefines);SUMMER_MODE</ModeDefines>
     <ModeDefines Condition="'$(HalloweenMode)' == 'true'">$(ModeDefines);HALLOWEEN_MODE</ModeDefines>

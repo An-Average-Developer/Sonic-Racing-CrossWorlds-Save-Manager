@@ -1,8 +1,10 @@
 #include "Windows/Main/Tabs/Tickets/TicketsTab.h"
 #include <algorithm>
 #include "Localization/Localization.h"
+#include "Services/SaveFile/AppSave.h"
 #include "UI/Material/Motion.h"
 #include "Windows/Main/MainWindow.h"
+#include "Windows/Main/Tabs/Konami.h"
 #include "Windows/Main/Tabs/Tickets/ValueAppliedOverlay.h"
 
 namespace SonicRacingSaveManager::Main {
@@ -30,6 +32,12 @@ void TicketsTab::Draw(UI::Ui& ui, const Rect& area) {
         loadedAt = -1.0;
     }
     if (loadedAt < 0.0) loadedAt = ui.Time();
+    if (KonamiTyped(ui, konamiStep)) {
+        const bool on = !Services::SaveFile::KonamiExtras();
+        Services::SaveFile::SetKonamiExtras(on);
+        if (!on && s.IsSpeedLimit()) s.ToggleSpeedLimit();   // hidden again: the game's own code back
+        s.statusMessage = Loc::Get(on ? "tickets_konami_on" : "tickets_konami_off");
+    }
     const Rect grid = area.Inset(20.f);
     const Rect banner{ grid.x, grid.y, grid.w, kTicketsBannerH };
     {

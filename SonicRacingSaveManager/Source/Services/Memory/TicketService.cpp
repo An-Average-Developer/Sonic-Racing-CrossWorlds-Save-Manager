@@ -31,19 +31,22 @@ TicketService::Result TicketService::ToggleMultiply() {
 
 TicketService::Result TicketService::ToggleMultiply500() {
     if (!multiply500) {
-        // Write cave first, then JMP patch (safest order)
-        bool success = memory.WriteBytes(TICKET_MULTIPLY500_CAVE_ADDRESS, MULTIPLY500_CAVE_BYTES);
+        // Write both caves first, then the JMP patch (safest order)
+        bool success = memory.WriteBytes(TICKET_MULTIPLY500_CAVE2_ADDRESS, MULTIPLY500_CAVE2_BYTES);
+        if (success) success = memory.WriteBytes(TICKET_MULTIPLY500_CAVE_ADDRESS, MULTIPLY500_CAVE_BYTES);
         if (success) success = memory.WriteBytes(TICKET_MULTIPLY500_PATCH_ADDRESS, MULTIPLY500_PATCH_BYTES);
         if (!success) {
             memory.WriteBytes(TICKET_MULTIPLY500_CAVE_ADDRESS, MULTIPLY500_CAVE_ORIGINAL);
+            memory.WriteBytes(TICKET_MULTIPLY500_CAVE2_ADDRESS, MULTIPLY500_CAVE2_ORIGINAL);
             return Result::EnableFailed;
         }
         multiply500 = true;
         return Result::Enabled;
     }
-    // Restore patch first so game stops jumping to cave, then wipe cave
+    // Restore the patch first so the game stops jumping to the caves, then wipe them
     const bool success = memory.WriteBytes(TICKET_MULTIPLY500_PATCH_ADDRESS, MULTIPLY500_PATCH_ORIGINAL);
     memory.WriteBytes(TICKET_MULTIPLY500_CAVE_ADDRESS, MULTIPLY500_CAVE_ORIGINAL);
+    memory.WriteBytes(TICKET_MULTIPLY500_CAVE2_ADDRESS, MULTIPLY500_CAVE2_ORIGINAL);
     if (!success) return Result::DisableFailed;
     multiply500 = false;
     return Result::Disabled;
@@ -56,6 +59,7 @@ void TicketService::RestoreAll() {
     if (multiply500) {
         memory.WriteBytes(TICKET_MULTIPLY500_PATCH_ADDRESS, MULTIPLY500_PATCH_ORIGINAL);
         memory.WriteBytes(TICKET_MULTIPLY500_CAVE_ADDRESS, MULTIPLY500_CAVE_ORIGINAL);
+        memory.WriteBytes(TICKET_MULTIPLY500_CAVE2_ADDRESS, MULTIPLY500_CAVE2_ORIGINAL);
     }
     Reset();
 }

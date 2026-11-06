@@ -24,6 +24,7 @@ constexpr Item kItems[MainWindow::TabCount] = {
     { M::Icon::BackupRestore, "rail_create_backup" },
     { M::Icon::Restore, "rail_restore" },
     { M::Icon::FolderCog, "rail_manage" },
+    { M::Icon::ContentSaveEdit, "rail_save_editor" },
     { M::Icon::Memory, "rail_tickets" },
     { M::Icon::Puzzle, "rail_mods" },
     { M::Icon::Storefront, "rail_store" },

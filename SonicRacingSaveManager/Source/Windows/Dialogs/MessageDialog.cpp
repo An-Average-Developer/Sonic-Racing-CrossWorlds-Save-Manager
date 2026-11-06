@@ -21,6 +21,8 @@ namespace M = UI::Material;
 
 constexpr float kShadowMargin = 28.f;   // transparent border holding the Dp24 shadow
 constexpr float kWidth = 440.f;         // card width
+constexpr float kWideWidth = 720.f;     // for a long text (a guide with steps): it would grow too tall at kWidth
+constexpr size_t kLongText = 700;       // characters
 constexpr float kPadding = 24.f;
 constexpr float kIconSize = 36.f;
 
@@ -53,7 +55,8 @@ class MessageWindow : public UI::Window {
 public:
     MessageWindow(HWND ownerWindow, std::wstring body, std::wstring heading, MessageButtons kind, MessageIcon glyph,
                   std::function<void(MessageResult)> onDone)
-        : owner(ownerWindow), text(std::move(body)), title(std::move(heading)), buttons(kind), icon(glyph), done(std::move(onDone)) {}
+        : owner(ownerWindow), text(std::move(body)), title(std::move(heading)), buttons(kind), icon(glyph), done(std::move(onDone)),
+          width(text.size() > kLongText ? kWideWidth : kWidth) {}
 
     bool Open() {
         UI::Window::Options w;
@@ -62,7 +65,7 @@ public:
         w.topmost = true;
         w.owner = owner;
         w.transparent = true;
-        w.width = static_cast<int>(kWidth + kShadowMargin * 2.f);
+        w.width = static_cast<int>(width + kShadowMargin * 2.f);
         w.height = 240;
         w.showCommand = SW_HIDE;
         if (!Create(w)) return false;
@@ -93,7 +96,7 @@ protected:
 
     void OnFrame() override {
         const M::Palette& p = M::P();
-        const float cardW = kWidth;
+        const float cardW = width;
         const Rect card{ kShadowMargin, kShadowMargin, cardW, g.Height() - kShadowMargin * 2.f };
 
         // Fade + rise + a slight zoom in (EaseOutBack), like the DialogHost open animation
@@ -190,7 +193,7 @@ private:
 
     void Layout(float heightDips) {
         const float scale = DpiScale();
-        const int w = static_cast<int>((kWidth + kShadowMargin * 2.f) * scale);
+        const int w = static_cast<int>((width + kShadowMargin * 2.f) * scale);
         const int h = static_cast<int>(heightDips * scale);
         RECT area{};
         if (owner && IsWindowVisible(owner) && !IsIconic(owner)) GetWindowRect(owner, &area);
@@ -204,6 +207,7 @@ private:
     MessageButtons buttons;
     MessageIcon icon;
     std::function<void(MessageResult)> done;
+    float width;   // the card's (after `text`: it is picked from it)
     bool finished = false;
 };
 

@@ -20,7 +20,10 @@ $Kinds = @(
     'RestoreAlert', 'Rocket', 'Send', 'ShieldLock', 'Snowflake', 'Star', 'StarCircle', 'Steam', 'SwapHorizontal',
     'TrendingUp', 'TrophyAward', 'WeatherNight', 'WeatherSunny', 'Web', 'Wrench',
     # Mod Store
-    'Storefront', 'Heart', 'Eye', 'OpenInNew', 'Sort', 'ImageOff', 'PageNext', 'PagePrevious', 'PackageDown', 'CheckboxMarkedCircle'
+    'Storefront', 'Heart', 'Eye', 'OpenInNew', 'Sort', 'ImageOff', 'PageNext', 'PagePrevious', 'PackageDown', 'CheckboxMarkedCircle',
+    # Save Editor
+    'CarSports', 'CarCog', 'Steering', 'Tire', 'Sticker', 'Bullhorn', 'Creation', 'Album', 'MusicNote', 'FlagCheckered', 'TimerOutline',
+    'School', 'LockOpenVariant', 'Trophy', 'Ticket', 'Medal', 'AccountStar', 'ContentSaveEdit', 'StarFourPoints', 'NintendoSwitch', 'Pencil', 'Plus', 'Play'
 ) | Sort-Object -Unique
 
 $asm = [System.Reflection.Assembly]::LoadFrom($Dll)

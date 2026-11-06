@@ -1,3 +1,17 @@
+4.0.0 [SAVE EDITOR UPDATE!]
+## Additions
+- New Save Editor tab: edit any account's app.sav with the game's own pictures, names and sounds (the account is backed up before every save)
+- Unlock or lock characters, machines, parts, colours, stickers, horns, auras, gadgets, honor titles, challenges and music, with Unlock all everywhere
+- Your garage and gadget presets: build machines, change their parts, colour, horn and aura, and fill the gadget plate (Season 2 special slot too)
+- Courses: Grand Prix results, Time Trial laps and Red Star Rings at every speed
+- Profile, currencies and statistics: level, tickets, Duel Medals, race totals and each character's races and wins
+- Play Missions: see the weekly missions and complete them
+- Nintendo Switch saves: open the app file of a JKSV backup and get a zip ready to restore on the console
+- Tickets Menu: Duel Medals (Freeze, Multiply, x500) and Max rings in races (offline)
+
+## Compatibility
+- Updated for Season 2: ticket patches and the new save data
+
 3.0.1 [MODS UPDATE!]
 ## Additions
 - New Mod Store tab: browse CrossWorlds mods on GameBanana (search, sorting and categories) and install them in one click (zip, 7z, rar), choosing the files when there are several

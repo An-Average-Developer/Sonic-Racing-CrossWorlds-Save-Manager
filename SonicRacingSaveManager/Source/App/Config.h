@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <string>
 
 // Every external id, webhook, link, path and process name the manager uses, in one place. The
@@ -11,7 +11,7 @@ inline constexpr const wchar_t* UserAgent = L"SonicRacingSaveManager";
 // Folder name under %APPDATA%, %LOCALAPPDATA% and %TEMP% (settings, Discord, extracted assets)
 inline constexpr const wchar_t* AppFolder = L"SonicRacingSaveManager";
 
-// ── Manager repository (updates, changelog, manual download) ────────────────
+// â”€â”€ Manager repository (updates, changelog, manual download) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 namespace GitHub {
 inline constexpr const wchar_t* Owner = L"An-Average-Developer";
 inline constexpr const wchar_t* Repo = L"Sonic-Racing-CrossWorlds-Save-Manager";
@@ -23,7 +23,7 @@ inline constexpr const wchar_t* LatestExeUrl =
     L"https://github.com/An-Average-Developer/Sonic-Racing-CrossWorlds-Save-Manager/releases/latest/download/SonicRacingSaveManager.exe";
 } // namespace GitHub
 
-// ── The game ────────────────────────────────────────────────────────────────
+// â”€â”€ The game â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 namespace Game {
 // Process.GetProcessesByName (Tickets Menu attach, and the Mod Manager's "game is running" lock)
 inline constexpr const wchar_t* ProcessName = L"SonicRacingCrossWorldsSteam";
@@ -35,8 +35,17 @@ inline constexpr const wchar_t* BackupsFolder = L"Backups";
 inline constexpr const wchar_t* BackupInfoFile = L"backup_info.json";
 } // namespace Game
 
-// ── GameBanana: the manager's own page (alternative update channel) and the Mod Manager's
-// update checks (apiv11) ──
+// â”€â”€ Screenshot mode (temporary): every Steam name shows as AccountName, and the accounts (and
+// their backups) whose name contains HiddenAccount are left out. Display only: the backups
+// created meanwhile still keep the real name in backup_info.json â”€â”€
+namespace Screenshot {
+inline constexpr bool Enabled = false;
+inline constexpr const wchar_t* AccountName = L"Steam account name";
+inline constexpr const wchar_t* HiddenAccount = L"iskandar";   // case-insensitive, part of the name
+} // namespace Screenshot
+
+// â”€â”€ GameBanana: the manager's own page (alternative update channel) and the Mod Manager's
+// update checks (apiv11) â”€â”€
 namespace GameBanana {
 inline constexpr int ToolId = 21025;
 inline constexpr const wchar_t* ToolPage = L"https://gamebanana.com/tools/21025";
@@ -53,7 +62,7 @@ inline constexpr const wchar_t* Origin = L"https://gamebanana.com";
 inline constexpr int TimeoutMs = 10000;
 } // namespace GameBanana
 
-// ── Discord ─────────────────────────────────────────────────────────────────
+// â”€â”€ Discord â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 namespace Discord {
 // Application used for Rich Presence and for "Connect with Discord" in the Reports tab (OAuth)
 inline constexpr const wchar_t* ClientId = L"ClientId";

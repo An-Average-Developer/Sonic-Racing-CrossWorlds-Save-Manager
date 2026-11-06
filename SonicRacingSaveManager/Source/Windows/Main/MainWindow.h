@@ -26,13 +26,13 @@ class BackupState;
 class MainWindow : public UI::Window {
 public:
     // The C# TabControl's order (Changelogs is new, next to Updates; Store, the Mod Store, next to
-    // the Mod Manager)
-    enum TabIndex { CreateBackup, Restore, Manage, Tickets, Mods, Store, Updates, Changelogs, Reports, Steam, TabCount };
+    // the Mod Manager; Save Editor, new, after the backup tabs)
+    enum TabIndex { CreateBackup, Restore, Manage, SaveEditor, Tickets, Mods, Store, Updates, Changelogs, Reports, Steam, TabCount };
     // The rail shows groups: the backup tabs together, the mod tabs together, the rest alone. A
     // group with several tabs switches between them with the bar on top of the content (SubTabs).
-    enum GroupIndex { BackupsGroup, TicketsGroup, ModsGroup, UpdatesGroup, ChangelogsGroup, ReportsGroup, SteamGroup, GroupCount };
-    static constexpr int kGroupFirst[GroupCount] = { CreateBackup, Tickets, Mods, Updates, Changelogs, Reports, Steam };
-    static constexpr int kGroupSize[GroupCount] = { 3, 1, 2, 1, 1, 1, 1 };
+    enum GroupIndex { BackupsGroup, SaveEditorGroup, TicketsGroup, ModsGroup, UpdatesGroup, ChangelogsGroup, ReportsGroup, SteamGroup, GroupCount };
+    static constexpr int kGroupFirst[GroupCount] = { CreateBackup, SaveEditor, Tickets, Mods, Updates, Changelogs, Reports, Steam };
+    static constexpr int kGroupSize[GroupCount] = { 3, 1, 1, 2, 1, 1, 1, 1 };
     static int GroupOf(int tab);
 
     MainWindow();
@@ -97,7 +97,7 @@ private:
     // same group slides in sideways, under its bar
     double groupChangedAt = -10.0, tabChangedAt = -10.0;
     float groupDirection = 1.f, tabDirection = 1.f;
-    std::array<int, GroupCount> lastInGroup{ CreateBackup, Tickets, Mods, Updates, Changelogs, Reports, Steam };
+    std::array<int, GroupCount> lastInGroup{ CreateBackup, SaveEditor, Tickets, Mods, Updates, Changelogs, Reports, Steam };
     std::array<std::unique_ptr<Tab>, TabCount> tabs;
 
     std::unique_ptr<SettingsPopup> settings;
